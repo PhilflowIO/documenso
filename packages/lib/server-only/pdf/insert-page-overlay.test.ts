@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 import path from 'node:path';
+import type { FieldWithSignature } from '@documenso/prisma/types/field-with-signature';
 import { Canvas, Image as SkiaImage } from '@documenso/skia-canvas';
 import { PDF, PdfArray, PdfDict, PdfNumber } from '@libpdf/core';
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
@@ -8,6 +9,7 @@ import sharp from 'sharp';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { EnvelopeContentShapeType, EnvelopeContentType } from '../../types/envelope-content-meta';
+import type { TFieldMetaVerticalAlign } from '../../types/field-meta';
 import type { ContentImageSource } from '../../universal/content-renderer/content-renderer';
 import { insertPageOverlays } from './insert-page-overlay';
 
@@ -22,8 +24,11 @@ type PixelMatcher = (r: number, g: number, b: number) => boolean;
 
 const isRed: PixelMatcher = (r, g, b) => r > 180 && g < 90 && b < 90;
 const isBlue: PixelMatcher = (r, g, b) => r < 90 && g < 90 && b > 180;
+const isDark: PixelMatcher = (r, g, b) => r < 100 && g < 100 && b < 100;
 
-type Overlay = Pick<Parameters<typeof insertPageOverlays>[0], 'contents' | 'images'>;
+type Overlay = Pick<Parameters<typeof insertPageOverlays>[0], 'contents' | 'images'> & {
+  fields?: FieldWithSignature[];
+};
 
 /**
  * A red stroked rectangle content at `RECT`.
@@ -84,6 +89,82 @@ const createBlueImageOverlay = async (): Promise<Overlay> => {
     // same way `loadContentImages` passes it.
     images: new Map([['data_blue', new SkiaImage(Buffer.from(png)) as unknown as ContentImageSource]]),
   };
+};
+
+/**
+ * A drawn signature as the signature pad stores it: a large transparent canvas
+ * with the ink, a blue 5:1 stroke, covering only a small part in the middle.
+ */
+const SIGNATURE_PAD_SIZE = { width: 4800, height: 1920 };
+const SIGNATURE_INK = { left: 1800, top: 840, width: 1200, height: 240 };
+
+const createSignatureFieldOverlay = async (verticalAlign?: TFieldMetaVerticalAlign): Promise<Overlay> => {
+  const ink = await sharp({
+    create: {
+      width: SIGNATURE_INK.width,
+      height: SIGNATURE_INK.height,
+      channels: 4,
+      background: { r: 0, g: 0, b: 255, alpha: 1 },
+    },
+  })
+    .png()
+    .toBuffer();
+
+  const pad = await sharp({
+    create: { ...SIGNATURE_PAD_SIZE, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+  })
+    .composite([{ input: ink, left: SIGNATURE_INK.left, top: SIGNATURE_INK.top }])
+    .png()
+    .toBuffer();
+
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const field = {
+    id: 1,
+    secondaryId: 'field',
+    envelopeId: 'envelope',
+    envelopeItemId: 'item',
+    recipientId: 1,
+    type: 'SIGNATURE',
+    page: 1,
+    ...RECT,
+    customText: '',
+    inserted: true,
+    fieldMeta: { type: 'signature', verticalAlign },
+    signature: {
+      id: 1,
+      created: new Date(),
+      recipientId: 1,
+      fieldId: 1,
+      signatureImageAsBase64: `data:image/png;base64,${pad.toString('base64')}`,
+      typedSignature: null,
+    },
+  } as unknown as FieldWithSignature;
+
+  return { fields: [field] };
+};
+
+/**
+ * An inserted text field without descenders, so the bottom of its glyphs is
+ * the baseline.
+ */
+const createTextFieldOverlay = (): Overlay => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const field = {
+    id: 1,
+    secondaryId: 'field',
+    envelopeId: 'envelope',
+    envelopeItemId: 'item',
+    recipientId: 1,
+    type: 'TEXT',
+    page: 1,
+    ...RECT,
+    customText: 'HHHH',
+    inserted: true,
+    fieldMeta: { type: 'text', fontSize: 24, verticalAlign: 'baseline' },
+    signature: null,
+  } as unknown as FieldWithSignature;
+
+  return { fields: [field] };
 };
 
 /**
@@ -392,6 +473,51 @@ describe('insertPageOverlays', () => {
     expect(Math.abs(actual.maxX + 1 - expected.right)).toBeLessThan(tolerance);
     expect(Math.abs(actual.minY - expected.top)).toBeLessThan(tolerance);
     expect(Math.abs(actual.maxY + 1 - expected.bottom)).toBeLessThan(tolerance);
+  }, 60000);
+
+  it('fits only the ink of a signature into its field, sitting on the line', async () => {
+    const { actual, edges } = await roundtrip({
+      overlay: await createSignatureFieldOverlay('baseline'),
+      matchPixel: isBlue,
+    });
+
+    // The 5:1 ink is limited by the field width, so it spans the full width
+    // instead of shrinking with the empty space of the pad around it.
+    const tolerance = 2;
+
+    expect(Math.abs(actual.minX - edges.left)).toBeLessThan(tolerance);
+    expect(Math.abs(actual.maxX + 1 - edges.right)).toBeLessThan(tolerance);
+    expect(Math.abs(actual.maxY + 1 - edges.bottom)).toBeLessThan(tolerance);
+
+    const inkHeight = (edges.right - edges.left) / (SIGNATURE_INK.width / SIGNATURE_INK.height);
+
+    expect(Math.abs(actual.minY - (edges.bottom - inkHeight))).toBeLessThan(tolerance);
+  }, 60000);
+
+  it('sits the baseline of text on the line', async () => {
+    const { actual, edges, scale } = await roundtrip({
+      size: { width: 612, height: 792 },
+      overlay: createTextFieldOverlay(),
+      matchPixel: isDark,
+    });
+
+    // Glyph outlines are antialiased, so allow half a point.
+    expect(Math.abs(actual.maxY + 1 - edges.bottom)).toBeLessThan(0.5 * scale);
+  }, 60000);
+
+  it('renders a signature without an alignment as before: the whole pad, centered', async () => {
+    const { actual, edges } = await roundtrip({
+      overlay: await createSignatureFieldOverlay(),
+      matchPixel: isBlue,
+    });
+
+    const fieldWidth = edges.right - edges.left;
+    const fieldHeight = edges.bottom - edges.top;
+
+    const padScale = Math.min(fieldWidth / SIGNATURE_PAD_SIZE.width, fieldHeight / SIGNATURE_PAD_SIZE.height);
+
+    expect(Math.abs(actual.maxX + 1 - actual.minX - SIGNATURE_INK.width * padScale)).toBeLessThan(2);
+    expect(Math.abs((actual.minY + actual.maxY + 1) / 2 - (edges.top + edges.bottom) / 2)).toBeLessThan(2);
   }, 60000);
 
   it('refuses to export an image content whose image has not been loaded', async () => {

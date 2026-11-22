@@ -78,7 +78,17 @@ export const ZFieldMetaLetterSpacing = z.coerce
   .max(FIELD_MAX_LETTER_SPACING)
   .describe('The spacing between each character');
 
-const ZFieldMetaVerticalAlign = z.enum(['top', 'middle', 'bottom']).describe('The vertical alignment of the text');
+/**
+ * `baseline` treats the bottom edge of the field as a line to sign on: the ink
+ * of a signature, or the baseline of text, sits on it and descenders hang below.
+ * Unlike `bottom`, which aligns the text line box, so the baseline floats above
+ * the edge by the descent.
+ */
+export const ZFieldMetaVerticalAlign = z
+  .enum(['top', 'middle', 'bottom', 'baseline'])
+  .describe('The vertical alignment of the field content within the field bounds');
+
+export type TFieldMetaVerticalAlign = z.infer<typeof ZFieldMetaVerticalAlign>;
 
 const ZFieldMetaFontFamily = z
   .enum(['sans-serif', 'handwriting'])
@@ -104,6 +114,7 @@ export type TFieldTextAlignSchema = z.infer<typeof ZFieldTextAlignSchema>;
 export const ZInitialsFieldMeta = ZBaseFieldMeta.extend({
   type: z.literal('initials'),
   textAlign: ZFieldTextAlignSchema.optional(),
+  verticalAlign: ZFieldMetaVerticalAlign.nullish(),
   fontFamily: ZFieldMetaFontFamily.optional(),
 });
 
@@ -112,6 +123,7 @@ export type TInitialsFieldMeta = z.infer<typeof ZInitialsFieldMeta>;
 export const ZNameFieldMeta = ZBaseFieldMeta.extend({
   type: z.literal('name'),
   textAlign: ZFieldTextAlignSchema.optional(),
+  verticalAlign: ZFieldMetaVerticalAlign.nullish(),
 });
 
 export type TNameFieldMeta = z.infer<typeof ZNameFieldMeta>;
@@ -119,6 +131,7 @@ export type TNameFieldMeta = z.infer<typeof ZNameFieldMeta>;
 export const ZEmailFieldMeta = ZBaseFieldMeta.extend({
   type: z.literal('email'),
   textAlign: ZFieldTextAlignSchema.optional(),
+  verticalAlign: ZFieldMetaVerticalAlign.nullish(),
   overflow: ZFieldOverflowMode.optional().default(DEFAULT_EMAIL_OVERFLOW_MODE),
 });
 
@@ -127,6 +140,7 @@ export type TEmailFieldMeta = z.infer<typeof ZEmailFieldMeta>;
 export const ZDateFieldMeta = ZBaseFieldMeta.extend({
   type: z.literal('date'),
   textAlign: ZFieldTextAlignSchema.optional(),
+  verticalAlign: ZFieldMetaVerticalAlign.nullish(),
   overflow: ZFieldOverflowMode.optional().default(DEFAULT_DATE_OVERFLOW_MODE),
 });
 
@@ -202,6 +216,8 @@ export type TDropdownFieldMeta = z.infer<typeof ZDropdownFieldMeta>;
 
 export const ZSignatureFieldMeta = ZBaseFieldMeta.extend({
   type: z.literal('signature'),
+  textAlign: ZFieldTextAlignSchema.optional(),
+  verticalAlign: ZFieldMetaVerticalAlign.nullish(),
   overflow: ZFieldOverflowMode.optional().default(DEFAULT_SIGNATURE_OVERFLOW_MODE),
 });
 
@@ -421,6 +437,31 @@ export const FIELD_META_DEFAULT_VALUES: Record<FieldType, TFieldMetaSchema> = {
   [FieldType.CHECKBOX]: FIELD_CHECKBOX_META_DEFAULT_VALUES,
   [FieldType.DROPDOWN]: FIELD_DROPDOWN_META_DEFAULT_VALUES,
 } as const;
+
+const FIELD_TYPES_ON_LINE_BY_DEFAULT: FieldType[] = [
+  FieldType.SIGNATURE,
+  FieldType.INITIALS,
+  FieldType.NAME,
+  FieldType.DATE,
+  FieldType.EMAIL,
+];
+
+/**
+ * The meta for a field newly placed in the editor. Fields that are usually
+ * filled in on a signing line start on the line.
+ *
+ * Kept apart from `FIELD_META_DEFAULT_VALUES`, which also backs API and server
+ * defaults whose rendering must not change.
+ */
+export const getEditorDefaultFieldMeta = (type: FieldType): TFieldMetaSchema => {
+  const fieldMeta = structuredClone(FIELD_META_DEFAULT_VALUES[type]);
+
+  if (fieldMeta && FIELD_TYPES_ON_LINE_BY_DEFAULT.includes(type)) {
+    return { ...fieldMeta, verticalAlign: 'baseline' } as TFieldMetaSchema;
+  }
+
+  return fieldMeta;
+};
 
 export const ZEnvelopeFieldAndMetaSchema = z.discriminatedUnion('type', [
   z.object({

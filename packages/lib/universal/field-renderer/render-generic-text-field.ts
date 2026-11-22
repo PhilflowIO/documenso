@@ -1,7 +1,7 @@
 import Konva from 'konva';
 
 import { getSignatureFontFamily } from '../../constants/pdf';
-import type { GenericTextFieldTypeMetas } from '../../types/field-meta';
+import type { GenericTextFieldTypeMetas, TFieldMetaVerticalAlign } from '../../types/field-meta';
 import {
   FIELD_DEFAULT_GENERIC_ALIGN,
   FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN,
@@ -20,6 +20,7 @@ import {
 } from './field-generic-items';
 import type { FieldToRender, RenderFieldElementOptions } from './field-renderer';
 import { calculateFieldPosition } from './field-renderer';
+import { applyTextBaselineAlignment, toKonvaVerticalAlign } from './field-vertical-align';
 
 const DEFAULT_TEXT_X_PADDING = 6;
 
@@ -52,7 +53,7 @@ const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOption
   let isLabel = true;
   let textToRender: string = fieldMeta?.label || fieldTypeName;
   let textAlign: 'left' | 'center' | 'right' = 'center';
-  let textVerticalAlign: 'top' | 'middle' | 'bottom' = FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN;
+  let textVerticalAlign: TFieldMetaVerticalAlign = fieldMeta?.verticalAlign || FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN;
   let textLineHeight = FIELD_DEFAULT_LINE_HEIGHT;
   let textLetterSpacing = FIELD_DEFAULT_LETTER_SPACING;
 
@@ -100,7 +101,6 @@ const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOption
     textAlign = fieldMeta?.textAlign || FIELD_DEFAULT_GENERIC_ALIGN;
 
     if (fieldMeta?.type === 'text' || fieldMeta?.type === 'number') {
-      textVerticalAlign = fieldMeta.verticalAlign || FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN;
       textLetterSpacing = fieldMeta.letterSpacing || FIELD_DEFAULT_LETTER_SPACING;
       textLineHeight = fieldMeta.lineHeight || FIELD_DEFAULT_LINE_HEIGHT;
     }
@@ -117,7 +117,7 @@ const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOption
     lineHeight: textLineHeight,
     letterSpacing: textLetterSpacing,
     textAlign,
-    verticalAlign: textVerticalAlign,
+    verticalAlign: toKonvaVerticalAlign(textVerticalAlign),
     baseX: textX + DEFAULT_TEXT_X_PADDING,
     baseY: textY,
     baseWidth: fieldWidth - DEFAULT_TEXT_X_PADDING * 2,
@@ -145,6 +145,8 @@ const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOption
     width: overflowLayout.width,
     height: overflowLayout.height,
   } satisfies Partial<Konva.TextConfig>);
+
+  applyTextBaselineAlignment(fieldText, textVerticalAlign);
 
   return {
     fieldText,
@@ -231,7 +233,7 @@ export const renderGenericTextFieldElement = (field: FieldToRender, options: Ren
       lineHeight: textLineHeight,
       letterSpacing: textLetterSpacing,
       textAlign,
-      verticalAlign: textVerticalAlign,
+      verticalAlign: toKonvaVerticalAlign(textVerticalAlign),
       baseX: DEFAULT_TEXT_X_PADDING,
       baseY: 0,
       baseWidth: rectWidth - DEFAULT_TEXT_X_PADDING * 2,
@@ -248,6 +250,8 @@ export const renderGenericTextFieldElement = (field: FieldToRender, options: Ren
     fieldText.height(newOverflowLayout.height);
     fieldText.wrap(newOverflowLayout.wrap);
     fieldText.verticalAlign(newOverflowLayout.verticalAlign);
+
+    applyTextBaselineAlignment(fieldText, textVerticalAlign);
 
     fieldGroup.getLayer()?.batchDraw();
   });

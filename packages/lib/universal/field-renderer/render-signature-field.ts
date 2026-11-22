@@ -2,40 +2,108 @@ import Konva from 'konva';
 
 import { DEFAULT_SIGNATURE_TEXT_FONT_SIZE, getSignatureFontFamily } from '../../constants/pdf';
 import { AppError } from '../../errors/app-error';
-import type { TSignatureFieldMeta } from '../../types/field-meta';
-import { resolveFieldOverflowMode } from '../../types/field-meta';
+import type { TFieldMetaVerticalAlign, TFieldTextAlignSchema, TSignatureFieldMeta } from '../../types/field-meta';
+import { FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN, resolveFieldOverflowMode } from '../../types/field-meta';
 import { calculateOverflowLayout } from './calculate-overflow-layout';
 import { createFieldHoverInteraction, upsertFieldGroup, upsertFieldRect } from './field-generic-items';
 import type { FieldToRender, RenderFieldElementOptions } from './field-renderer';
 import { calculateFieldPosition } from './field-renderer';
+import { applyTextBaselineAlignment, toKonvaVerticalAlign } from './field-vertical-align';
+import type { SignatureInkBounds } from './signature-image-layout';
+import { getSignatureInkBounds, layoutSignatureImage } from './signature-image-layout';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let SkiaImage: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let SkiaCanvas: any;
 
 void (async () => {
   if (typeof window === 'undefined') {
     const mod = await import('@documenso/skia-canvas');
     SkiaImage = mod.Image;
+    SkiaCanvas = mod.Canvas;
   }
 })();
 
-const getImageDimensions = (img: HTMLImageElement, fieldWidth: number, fieldHeight: number) => {
-  let imageWidth = img.width;
-  let imageHeight = img.height;
+type SignatureImageAlignment = {
+  textAlign?: TFieldTextAlignSchema | null;
+  verticalAlign?: TFieldMetaVerticalAlign | null;
+};
 
-  const scalingFactor = Math.min(fieldWidth / imageWidth, fieldHeight / imageHeight, 1);
+/**
+ * Read the pixels of a loaded image so the ink bounds can be detected.
+ *
+ * Returns `null` when the pixels cannot be read (for example a tainted canvas),
+ * in which case the whole image is used.
+ */
+const readImagePixels = (img: HTMLImageElement) => {
+  const width = img.naturalWidth || img.width;
+  const height = img.naturalHeight || img.height;
 
-  imageWidth = imageWidth * scalingFactor;
-  imageHeight = imageHeight * scalingFactor;
+  if (!width || !height) {
+    return null;
+  }
 
-  const imageX = (fieldWidth - imageWidth) / 2;
-  const imageY = (fieldHeight - imageHeight) / 2;
+  try {
+    const canvas: HTMLCanvasElement =
+      typeof window !== 'undefined'
+        ? Object.assign(document.createElement('canvas'), { width, height })
+        : new SkiaCanvas(width, height);
+
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      return null;
+    }
+
+    ctx.drawImage(img, 0, 0, width, height);
+
+    return ctx.getImageData(0, 0, width, height);
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Drawn and uploaded signatures are stored as the full drawing pad, so the ink
+ * usually covers a small part of the image. Once the field has an alignment
+ * only the ink is fitted, so it can actually reach the field edge (e.g. sit on
+ * a signature line). Fields without one keep fitting the whole image, so
+ * existing documents render exactly as before.
+ */
+const getSignatureImageCrop = (img: HTMLImageElement, alignment: SignatureImageAlignment): SignatureInkBounds => {
+  const width = img.naturalWidth || img.width;
+  const height = img.naturalHeight || img.height;
+
+  const fullImage = { x: 0, y: 0, width, height };
+
+  if (!alignment.verticalAlign) {
+    return fullImage;
+  }
+
+  const pixels = readImagePixels(img);
+
+  return (pixels && getSignatureInkBounds(pixels)) || fullImage;
+};
+
+const getSignatureImageAttrs = (
+  img: HTMLImageElement,
+  fieldWidth: number,
+  fieldHeight: number,
+  alignment: SignatureImageAlignment,
+) => {
+  const crop = getSignatureImageCrop(img, alignment);
 
   return {
-    width: imageWidth,
-    height: imageHeight,
-    x: imageX,
-    y: imageY,
+    crop,
+    ...layoutSignatureImage({
+      contentWidth: crop.width,
+      contentHeight: crop.height,
+      fieldWidth,
+      fieldHeight,
+      textAlign: alignment.textAlign,
+      verticalAlign: alignment.verticalAlign,
+    }),
   };
 };
 
@@ -67,7 +135,12 @@ const SIGNATURE_IMAGE_CACHE_PIXEL_RATIO = 2;
  * Build a Konva.Image for a base64 signature, sized to fit within the given
  * field dimensions. Works in both browser and Node.js (via skia-canvas).
  */
-const createSignatureImage = (signatureImageAsBase64: string, fieldWidth: number, fieldHeight: number): Konva.Image => {
+const createSignatureImage = (
+  signatureImageAsBase64: string,
+  fieldWidth: number,
+  fieldHeight: number,
+  alignment: SignatureImageAlignment,
+): Konva.Image => {
   if (typeof window !== 'undefined') {
     const img = new Image();
 
@@ -83,7 +156,7 @@ const createSignatureImage = (signatureImageAsBase64: string, fieldWidth: number
     img.onload = () => {
       image.setAttrs({
         image: img,
-        ...getImageDimensions(img, fieldWidth, fieldHeight),
+        ...getSignatureImageAttrs(img, fieldWidth, fieldHeight, alignment),
       });
 
       // Cache the image as a high-resolution bitmap so it stays sharp on
@@ -109,7 +182,7 @@ const createSignatureImage = (signatureImageAsBase64: string, fieldWidth: number
 
   return new Konva.Image({
     image: img,
-    ...getImageDimensions(img, fieldWidth, fieldHeight),
+    ...getSignatureImageAttrs(img, fieldWidth, fieldHeight, alignment),
     listening: false,
   });
 };
@@ -127,6 +200,10 @@ const createFieldSignature = (field: FieldToRender, options: RenderFieldElementO
   });
 
   const fieldTypeName = translations?.[field.type] || field.type;
+
+  const fieldMeta = field.fieldMeta as TSignatureFieldMeta | undefined;
+  const alignment = { textAlign: fieldMeta?.textAlign, verticalAlign: fieldMeta?.verticalAlign };
+  const textVerticalAlign = fieldMeta?.verticalAlign || FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN;
 
   // Calculate text positioning based on alignment
   const textX = 0;
@@ -148,7 +225,7 @@ const createFieldSignature = (field: FieldToRender, options: RenderFieldElementO
 
     if (field.inserted && signature?.signatureImageAsBase64) {
       return {
-        node: createSignatureImage(signature.signatureImageAsBase64, fieldWidth, fieldHeight),
+        node: createSignatureImage(signature.signatureImageAsBase64, fieldWidth, fieldHeight, alignment),
         isImageSignature: true,
         isLabel: false,
       };
@@ -169,14 +246,12 @@ const createFieldSignature = (field: FieldToRender, options: RenderFieldElementO
 
     if (signature?.signatureImageAsBase64) {
       return {
-        node: createSignatureImage(signature.signatureImageAsBase64, fieldWidth, fieldHeight),
+        node: createSignatureImage(signature.signatureImageAsBase64, fieldWidth, fieldHeight, alignment),
         isImageSignature: true,
         isLabel: false,
       };
     }
   }
-
-  const fieldMeta = field.fieldMeta as TSignatureFieldMeta | undefined;
 
   // Whether we're rendering the field type name (like "Signature") vs actual signed content.
   // Overflow should not apply to the label.
@@ -190,8 +265,8 @@ const createFieldSignature = (field: FieldToRender, options: RenderFieldElementO
     fontFamily: getSignatureFontFamily(textToRender),
     lineHeight: 1,
     letterSpacing: 0,
-    textAlign: 'center',
-    verticalAlign: 'middle',
+    textAlign: fieldMeta?.textAlign || 'center',
+    verticalAlign: toKonvaVerticalAlign(textVerticalAlign),
     baseX: textX,
     baseY: textY,
     baseWidth: fieldWidth,
@@ -214,6 +289,8 @@ const createFieldSignature = (field: FieldToRender, options: RenderFieldElementO
     width: overflowLayout.width,
     height: overflowLayout.height,
   } satisfies Partial<Konva.TextConfig>);
+
+  applyTextBaselineAlignment(fieldText, textVerticalAlign);
 
   return { node: fieldText, isImageSignature: false, isLabel };
 };
@@ -272,9 +349,10 @@ export const renderSignatureFieldElement = (field: FieldToRender, options: Rende
     const rectWidth = fieldRect.width();
     const rectHeight = fieldRect.height();
 
-    if (!isImageSignature) {
-      const fieldMeta = field.fieldMeta as TSignatureFieldMeta | undefined;
+    const fieldMeta = field.fieldMeta as TSignatureFieldMeta | undefined;
+    const textVerticalAlign = fieldMeta?.verticalAlign || FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN;
 
+    if (!isImageSignature) {
       const newOverflowLayout = calculateOverflowLayout({
         overflowMode: resolveFieldOverflowMode(fieldMeta),
         isLabel,
@@ -283,8 +361,8 @@ export const renderSignatureFieldElement = (field: FieldToRender, options: Rende
         fontFamily: getSignatureFontFamily(fieldSignature.text()),
         lineHeight: 1,
         letterSpacing: 0,
-        textAlign: 'center',
-        verticalAlign: 'middle',
+        textAlign: fieldMeta?.textAlign || 'center',
+        verticalAlign: toKonvaVerticalAlign(textVerticalAlign),
         baseX: 0,
         baseY: 0,
         baseWidth: rectWidth,
@@ -301,9 +379,27 @@ export const renderSignatureFieldElement = (field: FieldToRender, options: Rende
       fieldSignature.height(newOverflowLayout.height);
       fieldSignature.wrap(newOverflowLayout.wrap);
       fieldSignature.verticalAlign(newOverflowLayout.verticalAlign);
+
+      applyTextBaselineAlignment(fieldSignature, textVerticalAlign);
     } else {
-      fieldSignature.width(rectWidth);
-      fieldSignature.height(rectHeight);
+      const crop = (fieldSignature as Konva.Image).crop();
+
+      if (crop.width && crop.height) {
+        const layout = layoutSignatureImage({
+          contentWidth: crop.width,
+          contentHeight: crop.height,
+          fieldWidth: rectWidth,
+          fieldHeight: rectHeight,
+          textAlign: fieldMeta?.textAlign,
+          verticalAlign: fieldMeta?.verticalAlign,
+        });
+
+        fieldSignature.position({ x: layout.x, y: layout.y });
+        fieldSignature.size({ width: layout.width, height: layout.height });
+      } else {
+        fieldSignature.width(rectWidth);
+        fieldSignature.height(rectHeight);
+      }
     }
 
     fieldGroup.getLayer()?.batchDraw();
