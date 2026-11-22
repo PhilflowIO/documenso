@@ -2,7 +2,6 @@ import {
   DEFAULT_FIELD_FONT_SIZE,
   DEFAULT_HANDWRITING_INITIALS_FONT_SIZE,
   FIELD_DEFAULT_GENERIC_ALIGN,
-  FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN,
   type TInitialsFieldMeta as InitialsFieldMeta,
   resolveFieldFontSize,
   ZInitialsFieldMeta,
@@ -49,7 +48,7 @@ export const EditorFieldInitialsForm = ({
     defaultValues: {
       fontSize: resolveFieldFontSize(value),
       textAlign: value.textAlign ?? FIELD_DEFAULT_GENERIC_ALIGN,
-      verticalAlign: value.verticalAlign ?? FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN,
+      verticalAlign: value.verticalAlign,
       fontFamily: value.fontFamily ?? 'sans-serif',
     },
   });
@@ -121,11 +120,9 @@ export const EditorFieldInitialsForm = ({
             )}
           />
 
-          <div className="flex w-full flex-row gap-x-4">
-            <EditorGenericTextAlignField className="w-full" formControl={form.control} />
+          <EditorGenericTextAlignField className="w-full" formControl={form.control} />
 
-            <EditorGenericVerticalAlignField className="w-full" contentType="signature" formControl={form.control} />
-          </div>
+          <EditorGenericVerticalAlignField className="w-full" formControl={form.control} />
         </fieldset>
       </form>
     </Form>

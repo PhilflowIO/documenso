@@ -1,4 +1,5 @@
 import {
+  FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN,
   FIELD_MAX_LETTER_SPACING,
   FIELD_MAX_LINE_HEIGHT,
   FIELD_MIN_LETTER_SPACING,
@@ -121,6 +122,8 @@ export const EditorGenericVerticalAlignField = ({
 }) => {
   const { t } = useLingui();
 
+  // A missing value renders centered, so it is shown as such but never written:
+  // writing it would change how existing fields render.
   return (
     <FormField
       control={formControl}
@@ -131,7 +134,11 @@ export const EditorGenericVerticalAlignField = ({
             <Trans>Vertical Align</Trans>
           </FormLabel>
           <FormControl>
-            <Select {...field} onValueChange={field.onChange}>
+            <Select
+              {...field}
+              value={field.value ?? FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN}
+              onValueChange={field.onChange}
+            >
               <SelectTrigger data-testid="field-form-verticalAlign">
                 <SelectValue placeholder={t`Select vertical align`} />
               </SelectTrigger>

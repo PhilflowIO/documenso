@@ -3,7 +3,6 @@ import {
   DEFAULT_FIELD_FONT_SIZE,
   FIELD_DATE_META_DEFAULT_VALUES,
   FIELD_DEFAULT_GENERIC_ALIGN,
-  FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN,
   ZDateFieldMeta,
 } from '@documenso/lib/types/field-meta';
 import { Form } from '@documenso/ui/primitives/form/form';
@@ -44,7 +43,7 @@ export const EditorFieldDateForm = ({
     defaultValues: {
       fontSize: value.fontSize || DEFAULT_FIELD_FONT_SIZE,
       textAlign: value.textAlign ?? FIELD_DEFAULT_GENERIC_ALIGN,
-      verticalAlign: value.verticalAlign ?? FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN,
+      verticalAlign: value.verticalAlign,
       overflow: value.overflow || FIELD_DATE_META_DEFAULT_VALUES.overflow,
     },
   });
@@ -73,11 +72,9 @@ export const EditorFieldDateForm = ({
         <fieldset className="flex flex-col gap-2">
           <EditorGenericFontSizeField formControl={form.control} />
 
-          <div className="flex w-full flex-row gap-x-4">
-            <EditorGenericTextAlignField className="w-full" formControl={form.control} />
+          <EditorGenericTextAlignField className="w-full" formControl={form.control} />
 
-            <EditorGenericVerticalAlignField className="w-full" formControl={form.control} />
-          </div>
+          <EditorGenericVerticalAlignField className="w-full" formControl={form.control} />
         </fieldset>
       </form>
     </Form>

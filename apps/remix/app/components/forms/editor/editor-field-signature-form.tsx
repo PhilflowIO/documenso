@@ -1,6 +1,5 @@
 import { DEFAULT_SIGNATURE_TEXT_FONT_SIZE } from '@documenso/lib/constants/pdf';
 import {
-  FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN,
   FIELD_SIGNATURE_META_DEFAULT_VALUES,
   type TSignatureFieldMeta,
   ZSignatureFieldMeta,
@@ -45,7 +44,7 @@ export const EditorFieldSignatureForm = ({
       overflow: value.overflow || FIELD_SIGNATURE_META_DEFAULT_VALUES.overflow,
       fontSize: value.fontSize || DEFAULT_SIGNATURE_TEXT_FONT_SIZE,
       textAlign: value.textAlign ?? 'center',
-      verticalAlign: value.verticalAlign ?? FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN,
+      verticalAlign: value.verticalAlign,
     },
   });
 
