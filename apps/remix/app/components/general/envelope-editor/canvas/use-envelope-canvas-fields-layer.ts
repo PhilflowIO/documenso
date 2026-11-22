@@ -4,7 +4,7 @@ import type { TLocalField } from '@documenso/lib/client-only/hooks/use-editor-fi
 import { useCurrentEnvelopeEditor } from '@documenso/lib/client-only/providers/envelope-editor-provider';
 import { useCurrentEnvelopeRender } from '@documenso/lib/client-only/providers/envelope-render-provider';
 import type { EnvelopePageItemsVisibility } from '@documenso/lib/types/envelope-page-items-visibility';
-import { FIELD_META_DEFAULT_VALUES } from '@documenso/lib/types/field-meta';
+import { getEditorDefaultFieldMeta } from '@documenso/lib/types/field-meta';
 import { MIN_FIELD_HEIGHT_PX, MIN_FIELD_WIDTH_PX } from '@documenso/lib/universal/field-renderer/field-renderer';
 import { renderField } from '@documenso/lib/universal/field-renderer/render-field';
 import { getClientSideFieldTranslations } from '@documenso/lib/utils/fields';
@@ -312,7 +312,7 @@ export const useEnvelopeCanvasFieldsLayer = ({
       width: box.width,
       height: box.height,
       recipientId: editorFields.selectedRecipient.id,
-      fieldMeta: structuredClone(FIELD_META_DEFAULT_VALUES[type]),
+      fieldMeta: getEditorDefaultFieldMeta(type),
     });
   };
 
@@ -406,7 +406,7 @@ export const useEnvelopeCanvasFieldsLayer = ({
       if (field.type !== type) {
         editorFields.updateFieldByFormId(field.formId, {
           type,
-          fieldMeta: structuredClone(FIELD_META_DEFAULT_VALUES[type]),
+          fieldMeta: getEditorDefaultFieldMeta(type),
           id: undefined,
         });
       }

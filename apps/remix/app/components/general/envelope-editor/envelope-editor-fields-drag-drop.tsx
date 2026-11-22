@@ -2,7 +2,7 @@ import { getBoundingClientRect } from '@documenso/lib/client-only/get-bounding-c
 import { useDocumentElement } from '@documenso/lib/client-only/hooks/use-document-element';
 import { useCurrentEnvelopeEditor } from '@documenso/lib/client-only/providers/envelope-editor-provider';
 import { PDF_VIEWER_PAGE_SELECTOR } from '@documenso/lib/constants/pdf-viewer';
-import { FIELD_META_DEFAULT_VALUES } from '@documenso/lib/types/field-meta';
+import { getEditorDefaultFieldMeta } from '@documenso/lib/types/field-meta';
 import { nanoid } from '@documenso/lib/universal/id';
 import { canRecipientFieldsBeModified } from '@documenso/lib/utils/recipients';
 import { SignatureIcon } from '@documenso/ui/icons/signature';
@@ -195,7 +195,7 @@ export const EnvelopeEditorFieldDragDrop = ({
         width: fieldPageWidth,
         height: fieldPageHeight,
         recipientId: selectedRecipientId,
-        fieldMeta: structuredClone(FIELD_META_DEFAULT_VALUES[selectedField]),
+        fieldMeta: getEditorDefaultFieldMeta(selectedField),
       };
 
       editorFields.addField(field);

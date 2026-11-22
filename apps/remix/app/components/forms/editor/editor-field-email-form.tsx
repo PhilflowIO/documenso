@@ -2,6 +2,7 @@ import {
   DEFAULT_FIELD_FONT_SIZE,
   type TEmailFieldMeta as EmailFieldMeta,
   FIELD_DEFAULT_GENERIC_ALIGN,
+  FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN,
   FIELD_EMAIL_META_DEFAULT_VALUES,
   ZEmailFieldMeta,
 } from '@documenso/lib/types/field-meta';
@@ -11,11 +12,16 @@ import { useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import type { z } from 'zod';
 
-import { EditorGenericFontSizeField, EditorGenericTextAlignField } from './editor-field-generic-field-forms';
+import {
+  EditorGenericFontSizeField,
+  EditorGenericTextAlignField,
+  EditorGenericVerticalAlignField,
+} from './editor-field-generic-field-forms';
 
 const ZEmailFieldFormSchema = ZEmailFieldMeta.pick({
   fontSize: true,
   textAlign: true,
+  verticalAlign: true,
   overflow: true,
 });
 
@@ -38,6 +44,7 @@ export const EditorFieldEmailForm = ({
     defaultValues: {
       fontSize: value.fontSize || DEFAULT_FIELD_FONT_SIZE,
       textAlign: value.textAlign ?? FIELD_DEFAULT_GENERIC_ALIGN,
+      verticalAlign: value.verticalAlign ?? FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN,
       overflow: value.overflow || FIELD_EMAIL_META_DEFAULT_VALUES.overflow,
     },
   });
@@ -66,7 +73,11 @@ export const EditorFieldEmailForm = ({
         <fieldset className="flex flex-col gap-2">
           <EditorGenericFontSizeField formControl={form.control} />
 
-          <EditorGenericTextAlignField formControl={form.control} />
+          <div className="flex w-full flex-row gap-x-4">
+            <EditorGenericTextAlignField className="w-full" formControl={form.control} />
+
+            <EditorGenericVerticalAlignField className="w-full" formControl={form.control} />
+          </div>
         </fieldset>
       </form>
     </Form>

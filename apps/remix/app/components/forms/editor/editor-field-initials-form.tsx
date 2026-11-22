@@ -2,6 +2,7 @@ import {
   DEFAULT_FIELD_FONT_SIZE,
   DEFAULT_HANDWRITING_INITIALS_FONT_SIZE,
   FIELD_DEFAULT_GENERIC_ALIGN,
+  FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN,
   type TInitialsFieldMeta as InitialsFieldMeta,
   resolveFieldFontSize,
   ZInitialsFieldMeta,
@@ -14,11 +15,16 @@ import { useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import type { z } from 'zod';
 
-import { EditorGenericFontSizeField, EditorGenericTextAlignField } from './editor-field-generic-field-forms';
+import {
+  EditorGenericFontSizeField,
+  EditorGenericTextAlignField,
+  EditorGenericVerticalAlignField,
+} from './editor-field-generic-field-forms';
 
 const ZInitialsFieldFormSchema = ZInitialsFieldMeta.pick({
   fontSize: true,
   textAlign: true,
+  verticalAlign: true,
   fontFamily: true,
 });
 
@@ -43,6 +49,7 @@ export const EditorFieldInitialsForm = ({
     defaultValues: {
       fontSize: resolveFieldFontSize(value),
       textAlign: value.textAlign ?? FIELD_DEFAULT_GENERIC_ALIGN,
+      verticalAlign: value.verticalAlign ?? FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN,
       fontFamily: value.fontFamily ?? 'sans-serif',
     },
   });
@@ -114,7 +121,11 @@ export const EditorFieldInitialsForm = ({
             )}
           />
 
-          <EditorGenericTextAlignField formControl={form.control} />
+          <div className="flex w-full flex-row gap-x-4">
+            <EditorGenericTextAlignField className="w-full" formControl={form.control} />
+
+            <EditorGenericVerticalAlignField className="w-full" contentType="signature" formControl={form.control} />
+          </div>
         </fieldset>
       </form>
     </Form>

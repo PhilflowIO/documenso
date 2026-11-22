@@ -17,6 +17,18 @@ msgstr ""
 msgid ".PDF documents accepted (max {APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB)"
 msgstr ".PDF documents accepted (max {APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB)"
 
+#: apps/remix/app/components/forms/editor/editor-field-generic-field-forms.tsx
+msgid "On the line"
+msgstr "On the line"
+
+#: apps/remix/app/components/forms/editor/editor-field-generic-field-forms.tsx
+msgid "The bottom edge of the field is the line. Text sits on it."
+msgstr "The bottom edge of the field is the line. Text sits on it."
+
+#: apps/remix/app/components/forms/editor/editor-field-generic-field-forms.tsx
+msgid "The bottom edge of the field is the line. The height limits how large the signature gets."
+msgstr "The bottom edge of the field is the line. The height limits how large the signature gets."
+
 #. placeholder {0}: invalidEmails[0].value
 #: apps/remix/app/components/general/default-recipients-multiselect-combobox.tsx
 msgid "\"{0}\" is not a valid email address."

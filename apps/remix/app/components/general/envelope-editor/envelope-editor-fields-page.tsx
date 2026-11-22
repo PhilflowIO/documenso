@@ -6,7 +6,7 @@ import { PDF_VIEWER_ERROR_MESSAGES } from '@documenso/lib/constants/pdf-viewer-i
 import type { NormalizedFieldWithContext } from '@documenso/lib/server-only/ai/envelope/detect-fields/types';
 import { EnvelopeContentType } from '@documenso/lib/types/envelope-content-meta';
 import {
-  FIELD_META_DEFAULT_VALUES,
+  getEditorDefaultFieldMeta,
   type TCheckboxFieldMeta,
   type TDateFieldMeta,
   type TDropdownFieldMeta,
@@ -213,7 +213,7 @@ export const EnvelopeEditorFieldsPage = () => {
         envelopeItemId: field.envelopeItemId,
         recipientId: field.recipientId,
         page: field.pageNumber,
-        fieldMeta: structuredClone(FIELD_META_DEFAULT_VALUES[field.type]),
+        fieldMeta: getEditorDefaultFieldMeta(field.type),
       });
     }
 

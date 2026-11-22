@@ -6,7 +6,14 @@ import {
 } from '@documenso/lib/types/field-meta';
 import { cn } from '@documenso/ui/lib/utils';
 import { Checkbox } from '@documenso/ui/primitives/checkbox';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@documenso/ui/primitives/form/form';
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@documenso/ui/primitives/form/form';
 import { Input } from '@documenso/ui/primitives/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@documenso/ui/primitives/select';
 import { Trans, useLingui } from '@lingui/react/macro';
@@ -103,9 +110,14 @@ export const EditorGenericTextAlignField = ({
 export const EditorGenericVerticalAlignField = ({
   formControl,
   className,
+  contentType = 'text',
 }: {
   formControl: FormControlType;
   className?: string;
+  /**
+   * What sits on the line, which changes what the field height means.
+   */
+  contentType?: 'text' | 'signature';
 }) => {
   const { t } = useLingui();
 
@@ -133,9 +145,21 @@ export const EditorGenericVerticalAlignField = ({
                 <SelectItem value="bottom">
                   <Trans>Bottom</Trans>
                 </SelectItem>
+                <SelectItem value="baseline">
+                  <Trans>On the line</Trans>
+                </SelectItem>
               </SelectContent>
             </Select>
           </FormControl>
+          {field.value === 'baseline' && (
+            <FormDescription className="text-xs">
+              {contentType === 'signature' ? (
+                <Trans>The bottom edge of the field is the line. The height limits how large the signature gets.</Trans>
+              ) : (
+                <Trans>The bottom edge of the field is the line. Text sits on it.</Trans>
+              )}
+            </FormDescription>
+          )}
           <FormMessage />
         </FormItem>
       )}

@@ -1,5 +1,6 @@
 import { DEFAULT_SIGNATURE_TEXT_FONT_SIZE } from '@documenso/lib/constants/pdf';
 import {
+  FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN,
   FIELD_SIGNATURE_META_DEFAULT_VALUES,
   type TSignatureFieldMeta,
   ZSignatureFieldMeta,
@@ -11,11 +12,17 @@ import { useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import type { z } from 'zod';
 
-import { EditorGenericFontSizeField } from './editor-field-generic-field-forms';
+import {
+  EditorGenericFontSizeField,
+  EditorGenericTextAlignField,
+  EditorGenericVerticalAlignField,
+} from './editor-field-generic-field-forms';
 
 const ZSignatureFieldFormSchema = ZSignatureFieldMeta.pick({
   fontSize: true,
   overflow: true,
+  textAlign: true,
+  verticalAlign: true,
 });
 
 type TSignatureFieldFormSchema = z.infer<typeof ZSignatureFieldFormSchema>;
@@ -37,6 +44,8 @@ export const EditorFieldSignatureForm = ({
     defaultValues: {
       overflow: value.overflow || FIELD_SIGNATURE_META_DEFAULT_VALUES.overflow,
       fontSize: value.fontSize || DEFAULT_SIGNATURE_TEXT_FONT_SIZE,
+      textAlign: value.textAlign ?? 'center',
+      verticalAlign: value.verticalAlign ?? FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN,
     },
   });
 
@@ -68,6 +77,10 @@ export const EditorFieldSignatureForm = ({
               <Trans>The typed signature font size</Trans>
             </p>
           </div>
+
+          <EditorGenericVerticalAlignField contentType="signature" formControl={form.control} />
+
+          <EditorGenericTextAlignField formControl={form.control} />
         </fieldset>
       </form>
     </Form>
