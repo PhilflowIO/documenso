@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { TFieldMetaSchema } from '../../types/field-meta';
 import type { FieldToRender } from './field-renderer';
-import { renderGenericTextFieldElement } from './render-generic-text-field';
+import { isFieldTextWiderThanField, renderGenericTextFieldElement } from './render-generic-text-field';
 
 const PAGE = { width: 600, height: 800 };
 
@@ -15,6 +15,8 @@ const PAGE = { width: 600, height: 800 };
  * lines at the default 12 px, narrow enough that a date with time wraps.
  */
 const FIELD_BOX = { positionX: 30, positionY: 60, width: 20, height: 7.5 };
+
+const LONG_DATE = '2026-11-23 10:54 AM';
 
 const createField = (
   type: FieldType,
@@ -102,5 +104,47 @@ describe('renderGenericTextFieldElement', () => {
 
     expectRect(fieldGroup.getClientRect({ skipStroke: true, skipShadow: true }), box);
   });
+
+  it.each([
+    [FieldType.DATE, { type: 'date', overflow: 'auto', verticalAlign: 'baseline' }, LONG_DATE],
+    [FieldType.EMAIL, { type: 'email', overflow: 'auto' }, 'max.mustermann@beispiel-unternehmen.de'],
+  ] as const)('keeps a %s on one line in a field tall enough to wrap it', (type, fieldMeta, sample) => {
+    const { fieldText } = renderInEditor(createField(type, fieldMeta, sample));
+
+    expect(fieldText.wrap()).toBe('none');
+    expect(fieldText.textArr).toHaveLength(1);
+    expect(fieldText.getTextWidth()).toBeGreaterThan(expectedFieldRect(FIELD_BOX).width);
+  });
+
+  it('still wraps a text value in a field tall enough for it', () => {
+    const { fieldText } = renderInEditor(
+      createField(FieldType.TEXT, { type: 'text', text: 'Hamburg, Altona Nord Ost', overflow: 'auto' }),
+    );
+
+    expect(fieldText.wrap()).toBe('word');
+    expect(fieldText.textArr.length).toBeGreaterThan(1);
+  });
 });
 
+describe('isFieldTextWiderThanField', () => {
+  it('warns about a date wider than a field tall enough for a second line', () => {
+    const field = createField(FieldType.DATE, { type: 'date', overflow: 'auto' });
+
+    expect(isFieldTextWiderThanField({ field, text: LONG_DATE, pageWidth: PAGE.width, pageHeight: PAGE.height })).toBe(
+      true,
+    );
+  });
+
+  it('does not warn about text that wraps in a field tall enough for it', () => {
+    const field = createField(FieldType.TEXT, { type: 'text', overflow: 'auto' });
+
+    expect(
+      isFieldTextWiderThanField({
+        field,
+        text: 'Hamburg, Altona Nord Ost',
+        pageWidth: PAGE.width,
+        pageHeight: PAGE.height,
+      }),
+    ).toBe(false);
+  });
+});

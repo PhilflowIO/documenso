@@ -9,6 +9,14 @@ type OverflowLayoutParams = {
   /** True when rendering the field type name (like "Text", "Date", "Email") or a user label, not actual user content. */
   isLabel: boolean;
 
+  /**
+   * False for content that reads as one token, like a date or an email address. In `auto` mode it then
+   * overflows sideways like a single line field instead of wrapping, however tall the field is.
+   *
+   * @default true
+   */
+  canWrap?: boolean;
+
   /** The text content to render. Used to determine if text overflows the field bounds. */
   textToRender: string;
 
@@ -293,7 +301,7 @@ export const calculateOverflowLayout = (params: OverflowLayoutParams): OverflowL
 
   // Auto single-line: overflow horizontal only when text exceeds field width.
   // Center text align is overridden to left so it overflows right.
-  if (!layout.hasRoomForMoreThanOneLine) {
+  if (!layout.hasRoomForMoreThanOneLine || params.canWrap === false) {
     if (!layout.exceedsWidth) {
       // Text fits — keep original alignment, no overflow needed.
       return {

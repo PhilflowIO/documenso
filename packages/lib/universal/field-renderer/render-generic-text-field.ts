@@ -1,3 +1,4 @@
+import { FieldType } from '@prisma/client';
 import Konva from 'konva';
 
 import { getSignatureFontFamily } from '../../constants/pdf';
@@ -23,6 +24,15 @@ import { calculateFieldPosition, FIELD_SAMPLE_VALUE_OPACITY } from './field-rend
 import { applyTextBaselineAlignment, toKonvaVerticalAlign } from './field-vertical-align';
 
 const DEFAULT_TEXT_X_PADDING = 6;
+
+/**
+ * A date or an email address reads as one token: broken across lines it is no longer recognisable, and
+ * Konva breaks a word that does not fit in the middle. Its value stays on one line in `auto` overflow,
+ * however tall the field is.
+ */
+export const canFieldTextWrap = (fieldType: FieldType) => {
+  return fieldType !== FieldType.DATE && fieldType !== FieldType.EMAIL;
+};
 
 const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOptions) => {
   const { pageWidth, pageHeight, mode = 'edit', pageLayer, translations } = options;
@@ -124,6 +134,7 @@ const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOption
   const overflowLayout = calculateOverflowLayout({
     overflowMode: resolveFieldOverflowMode(fieldMeta),
     isLabel,
+    canWrap: canFieldTextWrap(field.type),
     textToRender,
     fontSize: textFontSize,
     fontFamily: textFontFamily,
@@ -225,7 +236,7 @@ export const renderGenericTextFieldElement = (field: FieldToRender, options: Ren
     fieldText.y(0);
     fieldText.width(rectWidth - DEFAULT_TEXT_X_PADDING * 2);
     fieldText.height(rectHeight);
-    fieldText.wrap('word');
+    fieldText.wrap(canFieldTextWrap(field.type) ? 'word' : 'none');
 
     fieldGroup.getLayer()?.batchDraw();
   });
@@ -241,6 +252,7 @@ export const renderGenericTextFieldElement = (field: FieldToRender, options: Ren
     const newOverflowLayout = calculateOverflowLayout({
       overflowMode: resolveFieldOverflowMode(fieldMeta),
       isLabel,
+      canWrap: canFieldTextWrap(field.type),
       textToRender,
       fontSize: textFontSize,
       fontFamily: textFontFamily,
@@ -287,7 +299,7 @@ export const renderGenericTextFieldElement = (field: FieldToRender, options: Ren
 };
 
 type IsFieldTextWiderThanFieldOptions = {
-  field: Pick<FieldToRender, 'width' | 'height' | 'positionX' | 'positionY' | 'fieldMeta'>;
+  field: Pick<FieldToRender, 'type' | 'width' | 'height' | 'positionX' | 'positionY' | 'fieldMeta'>;
   text: string;
   pageWidth: number;
   pageHeight: number;
@@ -296,7 +308,8 @@ type IsFieldTextWiderThanFieldOptions = {
 /**
  * Whether a value runs past the edges of a single line field, measured with
  * the same font, size and padding the renderer uses. A field tall enough for
- * a second line wraps instead, so it never counts as too narrow.
+ * a second line wraps instead, so it never counts as too narrow, unless its
+ * value cannot wrap (see `canFieldTextWrap`).
  */
 export const isFieldTextWiderThanField = ({ field, text, pageWidth, pageHeight }: IsFieldTextWiderThanFieldOptions) => {
   const fieldMeta = field.fieldMeta as GenericTextFieldTypeMetas | undefined;
@@ -319,7 +332,7 @@ export const isFieldTextWiderThanField = ({ field, text, pageWidth, pageHeight }
   });
 
   const isTooWide = textNode.width() > fieldWidth - DEFAULT_TEXT_X_PADDING * 2;
-  const hasRoomForSecondLine = fieldHeight >= textNode.height() * 2;
+  const hasRoomForSecondLine = canFieldTextWrap(field.type) && fieldHeight >= textNode.height() * 2;
 
   textNode.destroy();
 
