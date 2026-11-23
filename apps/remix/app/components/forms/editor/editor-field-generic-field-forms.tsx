@@ -4,6 +4,7 @@ import {
   FIELD_MAX_LINE_HEIGHT,
   FIELD_MIN_LETTER_SPACING,
   FIELD_MIN_LINE_HEIGHT,
+  type TFieldTextAlignSchema,
 } from '@documenso/lib/types/field-meta';
 import { cn } from '@documenso/ui/lib/utils';
 import { Checkbox } from '@documenso/ui/primitives/checkbox';
@@ -68,9 +69,15 @@ export const EditorGenericFontSizeField = ({
 export const EditorGenericTextAlignField = ({
   formControl,
   className,
+  fallbackValue,
 }: {
   formControl: FormControlType;
   className?: string;
+  /**
+   * Shown, but never written, when the field has no alignment, so an existing
+   * field keeps rendering the way it always has until the user picks one.
+   */
+  fallbackValue?: TFieldTextAlignSchema;
 }) => {
   const { t } = useLingui();
 
@@ -84,7 +91,7 @@ export const EditorGenericTextAlignField = ({
             <Trans>Text Align</Trans>
           </FormLabel>
           <FormControl>
-            <Select {...field} onValueChange={field.onChange}>
+            <Select {...field} value={field.value ?? fallbackValue} onValueChange={field.onChange}>
               <SelectTrigger data-testid="field-form-textAlign">
                 <SelectValue placeholder={t`Select text align`} />
               </SelectTrigger>

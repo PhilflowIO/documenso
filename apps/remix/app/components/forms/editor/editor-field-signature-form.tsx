@@ -43,7 +43,7 @@ export const EditorFieldSignatureForm = ({
     defaultValues: {
       overflow: value.overflow || FIELD_SIGNATURE_META_DEFAULT_VALUES.overflow,
       fontSize: value.fontSize || DEFAULT_SIGNATURE_TEXT_FONT_SIZE,
-      textAlign: value.textAlign ?? 'center',
+      textAlign: value.textAlign,
       verticalAlign: value.verticalAlign,
     },
   });
@@ -79,7 +79,7 @@ export const EditorFieldSignatureForm = ({
 
           <EditorGenericVerticalAlignField contentType="signature" formControl={form.control} />
 
-          <EditorGenericTextAlignField formControl={form.control} />
+          <EditorGenericTextAlignField fallbackValue="center" formControl={form.control} />
         </fieldset>
       </form>
     </Form>
