@@ -35,6 +35,7 @@ import { useEnvelopeCanvasContentsLayer } from './canvas/use-envelope-canvas-con
 import { useEnvelopeCanvasFieldsLayer } from './canvas/use-envelope-canvas-fields-layer';
 import { useEnvelopeCanvasLineAnchors } from './canvas/use-envelope-canvas-line-anchors';
 import { useEnvelopeCanvasMarquee } from './canvas/use-envelope-canvas-marquee';
+import { useEnvelopeCanvasPageLines } from './canvas/use-envelope-canvas-page-lines';
 import { useEnvelopeCanvasSelection } from './canvas/use-envelope-canvas-selection';
 import { contentButtonList } from './envelope-editor-content-drag-drop';
 
@@ -104,7 +105,19 @@ export const EnvelopeEditorFieldsPageRenderer = ({ pageData }: { pageData: PageR
     onChange: syncEditorSelection,
   });
 
-  const fields = useEnvelopeCanvasFieldsLayer({ canvas, selection, fieldsVisibility, applyPageItemsVisibility });
+  const pageLines = useEnvelopeCanvasPageLines({
+    envelopeItemId: currentEnvelopeItem?.id,
+    pageNumber,
+    renderPageImage: pageData.renderPageImage,
+  });
+
+  const fields = useEnvelopeCanvasFieldsLayer({
+    canvas,
+    selection,
+    fieldsVisibility,
+    applyPageItemsVisibility,
+    pageLines,
+  });
 
   const contents = useEnvelopeCanvasContentsLayer({
     canvas,

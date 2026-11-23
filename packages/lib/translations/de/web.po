@@ -54,6 +54,18 @@ msgstr "Beispielwerte ausblenden"
 msgid "Samples"
 msgstr "Beispiele"
 
+#: apps/remix/app/components/general/pdf-viewer/pdf-viewer-toolbar.tsx
+msgid "Snap to lines"
+msgstr "An Linien einrasten"
+
+#: apps/remix/app/components/general/pdf-viewer/pdf-viewer-toolbar.tsx
+msgid "Snap to lines. Hold Ctrl or ⌘ to place freely."
+msgstr "An Linien einrasten. Strg oder ⌘ halten, um frei zu platzieren."
+
+#: apps/remix/app/components/general/pdf-viewer/pdf-viewer-toolbar.tsx
+msgid "Snap"
+msgstr "Einrasten"
+
 #: apps/remix/app/components/general/envelope-editor/envelope-editor-field-overflow-warning.tsx
 msgid "The date is wider than the field. Widen the field or use a shorter format."
 msgstr "Das Datum ist breiter als das Feld. Feld breiter ziehen oder kürzeres Format wählen."

@@ -361,8 +361,8 @@ export const EnvelopeEditorFieldsPage = () => {
                   errorMessage={PDF_VIEWER_ERROR_MESSAGES.editor}
                   toolbar={
                     allowContents
-                      ? ['zoom', 'fields', 'contents', 'samples']
-                      : ['zoom', 'fields', 'samples']
+                      ? ['zoom', 'fields', 'contents', 'samples', 'snap']
+                      : ['zoom', 'fields', 'samples', 'snap']
                   }
                 />
               ) : (

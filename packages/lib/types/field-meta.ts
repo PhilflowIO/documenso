@@ -467,6 +467,29 @@ export const getEditorDefaultFieldMeta = (type: FieldType): TFieldMetaSchema => 
   return fieldMeta;
 };
 
+export type TVerticallyAlignableFieldMeta =
+  | TSignatureFieldMeta
+  | TInitialsFieldMeta
+  | TNameFieldMeta
+  | TEmailFieldMeta
+  | TDateFieldMeta
+  | TTextFieldMeta
+  | TNumberFieldMeta;
+
+export const isVerticallyAlignableFieldMeta = (
+  fieldMeta: TFieldMetaSchema | undefined | null,
+): fieldMeta is TVerticallyAlignableFieldMeta => {
+  return (
+    fieldMeta?.type === 'signature' ||
+    fieldMeta?.type === 'initials' ||
+    fieldMeta?.type === 'name' ||
+    fieldMeta?.type === 'email' ||
+    fieldMeta?.type === 'date' ||
+    fieldMeta?.type === 'text' ||
+    fieldMeta?.type === 'number'
+  );
+};
+
 export const ZEnvelopeFieldAndMetaSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal(FieldType.SIGNATURE),

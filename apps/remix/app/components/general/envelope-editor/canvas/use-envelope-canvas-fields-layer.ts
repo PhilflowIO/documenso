@@ -1,21 +1,30 @@
 import { useAnalytics } from '@documenso/lib/client-only/hooks/use-analytics';
 import { useDebouncedValue } from '@documenso/lib/client-only/hooks/use-debounced-value';
 import type { TLocalField } from '@documenso/lib/client-only/hooks/use-editor-fields';
+import { useLatestRef } from '@documenso/lib/client-only/hooks/use-latest-ref';
 import { useCurrentEnvelopeEditor } from '@documenso/lib/client-only/providers/envelope-editor-provider';
 import { useCurrentEnvelopeRender } from '@documenso/lib/client-only/providers/envelope-render-provider';
 import type { EnvelopePageItemsVisibility } from '@documenso/lib/types/envelope-page-items-visibility';
-import { getEditorDefaultFieldMeta } from '@documenso/lib/types/field-meta';
-import { MIN_FIELD_HEIGHT_PX, MIN_FIELD_WIDTH_PX } from '@documenso/lib/universal/field-renderer/field-renderer';
+import type { TFieldMetaVerticalAlign } from '@documenso/lib/types/field-meta';
+import { getEditorDefaultFieldMeta, isVerticallyAlignableFieldMeta } from '@documenso/lib/types/field-meta';
+import {
+  calculateFieldPosition,
+  MIN_FIELD_HEIGHT_PX,
+  MIN_FIELD_WIDTH_PX,
+} from '@documenso/lib/universal/field-renderer/field-renderer';
+import type { FieldSnap, PageBox, PageLine } from '@documenso/lib/universal/field-renderer/page-lines';
+import { findFieldSnap } from '@documenso/lib/universal/field-renderer/page-lines';
 import { renderField } from '@documenso/lib/universal/field-renderer/render-field';
 import { getClientSideFieldTranslations } from '@documenso/lib/utils/fields';
 import { getOverlappingFieldPairs } from '@documenso/lib/utils/fields-overlap';
 import { canRecipientFieldsBeModified } from '@documenso/lib/utils/recipients';
+import { getRecipientColorStyles } from '@documenso/ui/lib/recipient-colors';
 import { useLingui } from '@lingui/react/macro';
 import type { FieldType } from '@prisma/client';
+import { colord } from 'colord';
 import Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
-import { useEffect, useMemo } from 'react';
-
+import { useEffect, useMemo, useRef } from 'react';
 import { getFieldSampleValue } from './envelope-canvas-field-samples';
 import type { EnvelopeCanvas, EnvelopeCanvasBox } from './envelope-canvas-types';
 import { ENVELOPE_CANVAS_GROUP_NAMES } from './envelope-canvas-types';
@@ -25,16 +34,37 @@ import {
   syncEditorSelectionToCanvas,
 } from './reconcile-envelope-canvas-groups';
 import { findEnvelopeCanvasGroupsInBox } from './use-envelope-canvas-marquee';
+import { SNAP_TOLERANCE_PX, SNAP_TOLERANCE_TOUCH_PX } from './use-envelope-canvas-page-lines';
 import { useEnvelopeCanvasPendingCreation } from './use-envelope-canvas-pending-creation';
 import type { EnvelopeCanvasSelectionApi } from './use-envelope-canvas-selection';
 
 const PENDING_FIELD_NODE_NAME = 'pending-field-creation';
+
+const SNAP_GUIDE_NODE_NAME = 'field-snap-guide';
+
+/**
+ * How far the guide between two aligned fields reaches past them, on screen.
+ */
+const SNAP_GUIDE_OVERHANG_PX = 8;
+
+type FieldBox = PageBox & { formId: string };
+
+const resolveForegroundColor = () => {
+  const color = colord(`hsl(${window.getComputedStyle(document.documentElement).getPropertyValue('--foreground')})`);
+
+  return color.isValid() ? color.toRgbString() : 'rgb(15, 23, 42)';
+};
 
 type UseEnvelopeCanvasFieldsLayerOptions = {
   canvas: EnvelopeCanvas;
   selection: EnvelopeCanvasSelectionApi;
   fieldsVisibility: EnvelopePageItemsVisibility;
   applyPageItemsVisibility: () => void;
+
+  /**
+   * The lines printed on the page, which dragged fields snap onto.
+   */
+  pageLines: PageLine[];
 };
 
 export const useEnvelopeCanvasFieldsLayer = ({
@@ -42,6 +72,7 @@ export const useEnvelopeCanvasFieldsLayer = ({
   selection,
   fieldsVisibility,
   applyPageItemsVisibility,
+  pageLines,
 }: UseEnvelopeCanvasFieldsLayerOptions) => {
   const { i18n } = useLingui();
   const analytics = useAnalytics();
@@ -62,6 +93,14 @@ export const useEnvelopeCanvasFieldsLayer = ({
   );
 
   const isOnPage = (formId: string) => localPageFields.some((field) => field.formId === formId);
+
+  // Konva handlers are bound when a field renders, not on every React render.
+  const pageLinesRef = useLatestRef(pageLines);
+  const localPageFieldsRef = useLatestRef(localPageFields);
+  const snapToLinesRef = useLatestRef(viewerControls.snapToLines);
+  const selectedGroupsRef = useLatestRef(selectedGroups);
+
+  const activeSnapRef = useRef<FieldSnap<FieldBox> | null>(null);
 
   // Debounced so overlaps aren't recomputed on every drag/resize tick. Overlaps
   // only occur within the same page and envelope item, so this page's fields suffice.
@@ -90,11 +129,125 @@ export const useEnvelopeCanvasFieldsLayer = ({
     return formIds;
   }, [debouncedPageFields]);
 
+  const clearSnapGuides = () => {
+    for (const node of pageLayer.current?.find(`.${SNAP_GUIDE_NODE_NAME}`) ?? []) {
+      node.destroy();
+    }
+  };
+
+  const drawSnapGuide = (box: PageBox, snap: FieldSnap<FieldBox>, recipientId: number) => {
+    const layer = pageLayer.current;
+
+    if (!layer) {
+      return;
+    }
+
+    const overhang = SNAP_GUIDE_OVERHANG_PX / scale;
+    const bottom = snap.y + box.height;
+
+    // A page line is traced in the recipient's colour, the edge of another field
+    // with a neutral guide spanning both fields.
+    const guideAttrs = snap.line
+      ? {
+          points: [snap.line.x, bottom + 1 / scale, snap.line.x + snap.line.width, bottom + 1 / scale],
+          stroke: getRecipientColorStyles(getRecipientColorKey(recipientId)).baseRing,
+          strokeWidth: 2,
+        }
+      : {
+          points: [
+            Math.min(box.x, snap.alignedBox?.x ?? box.x) - overhang,
+            bottom,
+            Math.max(box.x + box.width, (snap.alignedBox?.x ?? 0) + (snap.alignedBox?.width ?? 0)) + overhang,
+            bottom,
+          ],
+          stroke: resolveForegroundColor(),
+          strokeWidth: 1,
+        };
+
+    const guide = new Konva.Line({
+      ...guideAttrs,
+      name: SNAP_GUIDE_NODE_NAME,
+      strokeScaleEnabled: false,
+      listening: false,
+    });
+
+    layer.add(guide);
+    guide.moveToTop();
+  };
+
+  const handleDragMove = (event: KonvaEventObject<DragEvent>, field: TLocalField) => {
+    const fieldGroup = event.target as Konva.Group;
+    const fieldRect = fieldGroup.findOne('.field-rect');
+
+    clearSnapGuides();
+    activeSnapRef.current = null;
+
+    // Holding Ctrl or Cmd places the field freely. Several selected fields move
+    // together, so none of them snaps on its own.
+    const isSnapSuppressed = event.evt.ctrlKey || event.evt.metaKey || selectedGroupsRef.current.length > 1;
+
+    if (!fieldRect || !snapToLinesRef.current || isSnapSuppressed) {
+      return;
+    }
+
+    const box = { x: fieldGroup.x(), y: fieldGroup.y(), width: fieldRect.width(), height: fieldRect.height() };
+
+    const otherFieldBoxes = localPageFieldsRef.current
+      .filter((pageField) => pageField.formId !== field.formId)
+      .map((pageField): FieldBox => {
+        const { fieldX, fieldY, fieldWidth, fieldHeight } = calculateFieldPosition(
+          pageField,
+          unscaledViewport.width,
+          unscaledViewport.height,
+        );
+
+        return { formId: pageField.formId, x: fieldX, y: fieldY, width: fieldWidth, height: fieldHeight };
+      });
+
+    const isTouch = 'pointerType' in event.evt && event.evt.pointerType === 'touch';
+
+    const snap = findFieldSnap({
+      box,
+      lines: pageLinesRef.current,
+      boxes: otherFieldBoxes,
+      tolerance: (isTouch ? SNAP_TOLERANCE_TOUCH_PX : SNAP_TOLERANCE_PX) / scale,
+    });
+
+    if (!snap) {
+      return;
+    }
+
+    fieldGroup.y(snap.y);
+    activeSnapRef.current = snap;
+
+    drawSnapGuide(box, snap, field.recipientId);
+  };
+
+  /**
+   * The vertical alignment a field takes on when it snaps: on a page line its
+   * content sits on the line, next to another field it matches that field so
+   * both texts share a baseline.
+   */
+  const getSnappedVerticalAlign = (snap: FieldSnap<FieldBox>): TFieldMetaVerticalAlign | null => {
+    if (snap.line) {
+      return 'baseline';
+    }
+
+    const alignedFieldMeta = snap.alignedBox ? editorFields.getFieldByFormId(snap.alignedBox.formId)?.fieldMeta : null;
+
+    return isVerticallyAlignableFieldMeta(alignedFieldMeta) ? (alignedFieldMeta.verticalAlign ?? null) : null;
+  };
+
   const handleResizeOrMove = (event: KonvaEventObject<Event>) => {
     const isDragEvent = event.type === 'dragend';
 
     const fieldGroup = event.target as Konva.Group;
     const fieldFormId = fieldGroup.id();
+
+    const snap = isDragEvent ? activeSnapRef.current : null;
+
+    activeSnapRef.current = null;
+    clearSnapGuides();
 
     // Measured on the field's own rect: the group also holds its text, which can
     // overflow the field (and does on purpose for sample values).
@@ -131,6 +284,13 @@ export const useEnvelopeCanvasFieldsLayer = ({
     if (!isDragEvent) {
       fieldUpdates.width = fieldPageWidth;
       fieldUpdates.height = fieldPageHeight;
+    }
+
+    const fieldMeta = editorFields.getFieldByFormId(fieldFormId)?.fieldMeta;
+    const snappedVerticalAlign = snap ? getSnappedVerticalAlign(snap) : null;
+
+    if (snappedVerticalAlign && isVerticallyAlignableFieldMeta(fieldMeta)) {
+      fieldUpdates.fieldMeta = { ...fieldMeta, verticalAlign: snappedVerticalAlign };
     }
 
     editorFields.updateFieldByFormId(fieldFormId, fieldUpdates);
@@ -233,6 +393,7 @@ export const useEnvelopeCanvasFieldsLayer = ({
 
     fieldGroup.off('click');
     fieldGroup.off('transformend');
+    fieldGroup.off('dragmove');
     fieldGroup.off('dragend');
 
     fieldGroup.on('click', (event) => {
@@ -248,6 +409,7 @@ export const useEnvelopeCanvasFieldsLayer = ({
     });
 
     fieldGroup.on('transformend', handleResizeOrMove);
+    fieldGroup.on('dragmove', (event) => handleDragMove(event, field));
     fieldGroup.on('dragend', handleResizeOrMove);
   };
 

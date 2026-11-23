@@ -5,14 +5,14 @@ import {
 } from '@documenso/lib/client-only/providers/envelope-render-provider';
 import { cn } from '@documenso/ui/lib/utils';
 import { Trans, useLingui } from '@lingui/react/macro';
-import { EyeIcon, EyeOffIcon, TextCursorInputIcon, ZoomInIcon, ZoomOutIcon } from 'lucide-react';
+import { EyeIcon, EyeOffIcon, MagnetIcon, TextCursorInputIcon, ZoomInIcon, ZoomOutIcon } from 'lucide-react';
 import { useLayoutEffect, useState } from 'react';
 
 import type { ScrollTarget } from '../virtual-list/use-virtual-list';
 
 const TOOLBAR_BOTTOM_OFFSET = 24;
 
-export type EnvelopePdfViewerToolbarControl = 'zoom' | 'fields' | 'contents' | 'samples';
+export type EnvelopePdfViewerToolbarControl = 'zoom' | 'fields' | 'contents' | 'samples' | 'snap';
 
 export type EnvelopePdfViewerToolbarProps = {
   controls?: EnvelopePdfViewerToolbarControl[];
@@ -42,6 +42,8 @@ export const EnvelopePdfViewerToolbar = ({
     setContentsVisibility,
     showSampleValues,
     setShowSampleValues,
+    snapToLines,
+    setSnapToLines,
   } = viewerControls;
 
   const [position, setPosition] = useState<{ left: number; bottom: number } | null>(null);
@@ -108,6 +110,7 @@ export const EnvelopePdfViewerToolbar = ({
   const showFieldsToggle = controls.includes('fields');
   const showContentsToggle = controls.includes('contents');
   const showSamplesToggle = controls.includes('samples');
+  const showSnapToggle = controls.includes('snap');
 
   const isFieldsHidden = fieldsVisibility === 'hidden';
   const isContentsHidden = contentsVisibility === 'hidden';
@@ -216,6 +219,31 @@ export const EnvelopePdfViewerToolbar = ({
             <Trans>Samples</Trans>
           </span>
         </button>
+      )}
+
+      {showSnapToggle && (
+        <>
+          <div className="mx-1 h-5 w-px bg-border" />
+
+          <button
+            type="button"
+            title={t`Snap to lines. Hold Ctrl or ⌘ to place freely.`}
+            aria-label={t`Snap to lines`}
+            aria-pressed={snapToLines}
+            onClick={() => setSnapToLines(!snapToLines)}
+            className={cn(
+              'flex items-center gap-x-1.5 rounded-md px-2 py-1.5 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground',
+              {
+                'text-muted-foreground/60': !snapToLines,
+              },
+            )}
+          >
+            <MagnetIcon className="h-4 w-4" />
+            <span className="hidden sm:inline">
+              <Trans>Snap</Trans>
+            </span>
+          </button>
+        </>
       )}
     </div>
   );

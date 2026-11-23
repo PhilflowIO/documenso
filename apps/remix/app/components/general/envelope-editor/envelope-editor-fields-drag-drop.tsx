@@ -1,8 +1,11 @@
 import { getBoundingClientRect } from '@documenso/lib/client-only/get-bounding-client-rect';
 import { useDocumentElement } from '@documenso/lib/client-only/hooks/use-document-element';
 import { useCurrentEnvelopeEditor } from '@documenso/lib/client-only/providers/envelope-editor-provider';
+import { useCurrentEnvelopeRender } from '@documenso/lib/client-only/providers/envelope-render-provider';
 import { PDF_VIEWER_PAGE_SELECTOR } from '@documenso/lib/constants/pdf-viewer';
-import { getEditorDefaultFieldMeta } from '@documenso/lib/types/field-meta';
+import { getEditorDefaultFieldMeta, isVerticallyAlignableFieldMeta } from '@documenso/lib/types/field-meta';
+import { calculateFieldPosition, MIN_FIELD_WIDTH_PX } from '@documenso/lib/universal/field-renderer/field-renderer';
+import { findFieldSnap } from '@documenso/lib/universal/field-renderer/page-lines';
 import { nanoid } from '@documenso/lib/universal/id';
 import { canRecipientFieldsBeModified } from '@documenso/lib/utils/recipients';
 import { SignatureIcon } from '@documenso/ui/icons/signature';
@@ -24,6 +27,15 @@ import {
   UserIcon,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { getDetectedPageLines, SNAP_TOLERANCE_PX } from './canvas/use-envelope-canvas-page-lines';
+
+/**
+ * Signature lines are drawn for a signature, so a new signature takes the whole
+ * line. Other fields keep their size: a single "Place, date: ____" line holds
+ * two fields.
+ */
+const FIELD_TYPES_TAKING_LINE_WIDTH: FieldType[] = [FieldType.SIGNATURE, FieldType.INITIALS];
 
 const MIN_HEIGHT_PX = 12;
 const MIN_WIDTH_PX = 36;
@@ -95,6 +107,7 @@ export const EnvelopeEditorFieldDragDrop = ({
   selectedEnvelopeItemId,
 }: EnvelopeEditorFieldDragDropProps) => {
   const { envelope, editorFields, isTemplate, getRecipientColorKey, setIsPlacingItem } = useCurrentEnvelopeEditor();
+  const { pageSizes, viewerControls } = useCurrentEnvelopeRender();
 
   const { t } = useLingui();
 
@@ -198,12 +211,64 @@ export const EnvelopeEditorFieldDragDrop = ({
         fieldMeta: getEditorDefaultFieldMeta(selectedField),
       };
 
+      const pageSize = pageSizes.get(selectedEnvelopeItemId, pageNumber);
+      const isSnapSuppressed = event.ctrlKey || event.metaKey;
+
+      if (pageSize && viewerControls.snapToLines && !isSnapSuppressed) {
+        const { fieldX, fieldY, fieldWidth, fieldHeight } = calculateFieldPosition(
+          field,
+          pageSize.width,
+          pageSize.height,
+        );
+
+        const otherFieldBoxes = editorFields.localFields
+          .filter((pageField) => pageField.envelopeItemId === selectedEnvelopeItemId && pageField.page === pageNumber)
+          .map((pageField) => {
+            const position = calculateFieldPosition(pageField, pageSize.width, pageSize.height);
+
+            return { x: position.fieldX, y: position.fieldY, width: position.fieldWidth, height: position.fieldHeight };
+          });
+
+        const snap = findFieldSnap({
+          box: { x: fieldX, y: fieldY, width: fieldWidth, height: fieldHeight },
+          lines: getDetectedPageLines(selectedEnvelopeItemId, pageNumber),
+          boxes: otherFieldBoxes,
+          tolerance: SNAP_TOLERANCE_PX * (pageSize.width / width),
+        });
+
+        if (snap) {
+          field.positionY = (snap.y / pageSize.height) * 100;
+        }
+
+        if (
+          snap?.line &&
+          FIELD_TYPES_TAKING_LINE_WIDTH.includes(selectedField) &&
+          snap.line.width >= MIN_FIELD_WIDTH_PX
+        ) {
+          field.positionX = (snap.line.x / pageSize.width) * 100;
+          field.width = (snap.line.width / pageSize.width) * 100;
+        }
+
+        if (snap?.line && isVerticallyAlignableFieldMeta(field.fieldMeta)) {
+          field.fieldMeta = { ...field.fieldMeta, verticalAlign: 'baseline' };
+        }
+      }
+
       editorFields.addField(field);
 
       setIsFieldWithinBounds(false);
       setSelectedField(null);
     },
-    [isWithinPageBounds, selectedField, selectedRecipientId, selectedEnvelopeItemId, getPage, editorFields],
+    [
+      isWithinPageBounds,
+      selectedField,
+      selectedRecipientId,
+      selectedEnvelopeItemId,
+      getPage,
+      editorFields,
+      pageSizes,
+      viewerControls.snapToLines,
+    ],
   );
 
   useEffect(() => {

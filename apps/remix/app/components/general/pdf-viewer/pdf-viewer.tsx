@@ -8,7 +8,7 @@ import pMap from 'p-map';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import pdfjsWorker from 'pdfjs-dist/legacy/build/pdf.worker.mjs?url';
 import type React from 'react';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import type { ScrollTarget } from '../virtual-list/use-virtual-list';
 import { useVirtualList } from '../virtual-list/use-virtual-list';
@@ -462,6 +462,28 @@ const PdfViewerPage = ({
 
   const isPageReady = imageLoadingState === 'loaded' && (!CustomPageRenderer || isCustomRendererReady);
 
+  const renderPageImage = useCallback(
+    async (renderScale: number) => {
+      const page = await pdf.getPage(pageNumber);
+      const viewport = page.getViewport({ scale: renderScale });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+
+      if (!context) {
+        throw new Error('Failed to get canvas context');
+      }
+
+      await page.render({ canvasContext: context, viewport, canvas }).promise;
+
+      return context.getImageData(0, 0, canvas.width, canvas.height);
+    },
+    [pdf, pageNumber],
+  );
+
   return (
     // Must use ring instead of border since borders take up space inside the box,
     // which shrinks the page image (constrained to the box by `max-width: 100%`)
@@ -475,6 +497,7 @@ const PdfViewerPage = ({
             pageWidth: unscaledWidth,
             pageHeight: unscaledHeight,
             imageLoadingState,
+            renderPageImage,
             onReadyChange: setIsCustomRendererReady,
           }}
         />

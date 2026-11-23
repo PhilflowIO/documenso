@@ -39,6 +39,12 @@ export type EnvelopeViewerControls = {
    */
   showSampleValues: boolean;
   setShowSampleValues: (showSampleValues: boolean) => void;
+
+  /**
+   * Whether dragged fields snap onto the lines of the page. Remembered per browser.
+   */
+  snapToLines: boolean;
+  setSnapToLines: (snapToLines: boolean) => void;
 };
 
 /**
@@ -60,6 +66,12 @@ export type PageRenderData = {
   pageWidth: number;
   pageHeight: number;
   imageLoadingState: ImageLoadingState;
+
+  /**
+   * Render the bare page, without anything drawn on top, at the given number
+   * of pixels per page point. Used to find the lines printed on the page.
+   */
+  renderPageImage?: (scale: number) => Promise<ImageData>;
 
   /**
    * The page holds back its bitmap until the renderer reports ready, so a
@@ -259,6 +271,7 @@ export const EnvelopeRenderProvider = ({
   const [fieldsVisibility, setFieldsVisibility] = useState<EnvelopePageItemsVisibility>('visible');
   const [contentsVisibility, setContentsVisibility] = useState<EnvelopePageItemsVisibility>('visible');
   const [showSampleValues, setShowSampleValues] = usePersistedFlag('documenso.editor.show-sample-values', true);
+  const [snapToLines, setSnapToLines] = usePersistedFlag('documenso.editor.snap-to-lines', true);
 
   const setZoom = useCallback((value: number) => {
     setZoomInternal(clamp(value, { min: ENVELOPE_VIEWER_MIN_ZOOM, max: ENVELOPE_VIEWER_MAX_ZOOM }));
@@ -284,8 +297,10 @@ export const EnvelopeRenderProvider = ({
       setContentsVisibility,
       showSampleValues,
       setShowSampleValues,
+      snapToLines,
+      setSnapToLines,
     }),
-    [zoom, setZoom, zoomIn, zoomOut, fieldsVisibility, contentsVisibility, showSampleValues],
+    [zoom, setZoom, zoomIn, zoomOut, fieldsVisibility, contentsVisibility, showSampleValues, snapToLines],
   );
 
   const envelopeItems = useMemo(

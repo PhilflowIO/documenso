@@ -49,6 +49,18 @@ msgstr "Hide sample values"
 msgid "Samples"
 msgstr "Samples"
 
+#: apps/remix/app/components/general/pdf-viewer/pdf-viewer-toolbar.tsx
+msgid "Snap to lines"
+msgstr "Snap to lines"
+
+#: apps/remix/app/components/general/pdf-viewer/pdf-viewer-toolbar.tsx
+msgid "Snap to lines. Hold Ctrl or ⌘ to place freely."
+msgstr "Snap to lines. Hold Ctrl or ⌘ to place freely."
+
+#: apps/remix/app/components/general/pdf-viewer/pdf-viewer-toolbar.tsx
+msgid "Snap"
+msgstr "Snap"
+
 #: apps/remix/app/components/general/envelope-editor/envelope-editor-field-overflow-warning.tsx
 msgid "The date is wider than the field. Widen the field or use a shorter format."
 msgstr "The date is wider than the field. Widen the field or use a shorter format."
