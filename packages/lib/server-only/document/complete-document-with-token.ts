@@ -1,4 +1,4 @@
-import { DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
+import { resolveDocumentDateFormat } from '@documenso/lib/constants/date-formats';
 import { DEFAULT_DOCUMENT_TIME_ZONE } from '@documenso/lib/constants/time-zones';
 import { DOCUMENT_AUDIT_LOG_TYPE, RECIPIENT_DIFF_TYPE } from '@documenso/lib/types/document-audit-logs';
 import type { RequestMetadata } from '@documenso/lib/universal/extract-request-metadata';
@@ -254,7 +254,12 @@ export const completeDocumentWithToken = async ({
   if (envelope.internalVersion === 2 && uninsertedDateFields.length > 0) {
     const formattedDate = DateTime.now()
       .setZone(envelope.documentMeta?.timezone ?? DEFAULT_DOCUMENT_TIME_ZONE)
-      .toFormat(envelope.documentMeta?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT);
+      .toFormat(
+        resolveDocumentDateFormat({
+          dateFormat: envelope.documentMeta?.dateFormat,
+          language: envelope.documentMeta?.language,
+        }),
+      );
 
     const newDateFieldValues = {
       customText: formattedDate,

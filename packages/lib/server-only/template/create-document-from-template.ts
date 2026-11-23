@@ -15,7 +15,7 @@ import {
 import { DateTime } from 'luxon';
 import { match } from 'ts-pattern';
 
-import { DEFAULT_DOCUMENT_DATE_FORMAT } from '../../constants/date-formats';
+import { resolveDocumentDateFormat } from '../../constants/date-formats';
 import type { TEnvelopeExpirationPeriod } from '../../constants/envelope-expiration';
 import type { SupportedLanguageCodes } from '../../constants/i18n';
 import { AppError, AppErrorCode } from '../../errors/app-error';
@@ -761,9 +761,7 @@ export const createDocumentFromTemplate = async ({
                   });
                 }
 
-                payload.customText = DateTime.fromJSDate(date).toFormat(
-                  documentMeta.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT,
-                );
+                payload.customText = DateTime.fromJSDate(date).toFormat(resolveDocumentDateFormat(documentMeta));
 
                 payload.inserted = true;
               })

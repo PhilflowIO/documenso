@@ -63,7 +63,7 @@ export type AddSignersFormProps = {
   documentFlow: DocumentFlowStep;
   recipients: TRecipientLite[];
   fields: Field[];
-  documentMeta: Pick<DocumentMeta, 'dateFormat' | 'timezone'>;
+  documentMeta: Pick<DocumentMeta, 'dateFormat' | 'language' | 'timezone'>;
   signingOrder?: DocumentSigningOrder | null;
   allowDictateNextSigner?: boolean;
   onSubmit: (_data: TAddSignersFormSchema) => void;

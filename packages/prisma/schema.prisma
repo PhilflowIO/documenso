@@ -583,7 +583,7 @@ model DocumentMeta {
   subject                String?
   message                String?
   timezone               String?              @default("Etc/UTC") @db.Text
-  dateFormat             String?              @default("yyyy-MM-dd hh:mm a") @db.Text
+  dateFormat             String?              @db.Text // Null means "derive from the document language".
   redirectUrl            String?
   signingOrder           DocumentSigningOrder @default(PARALLEL)
   allowDictateNextSigner Boolean              @default(false)
@@ -1021,7 +1021,7 @@ model OrganisationGlobalSettings {
   includeSigningCertificate Boolean            @default(true)
   includeAuditLog           Boolean            @default(false)
   documentTimezone          String? // Nullable to allow using local timezones if not set.
-  documentDateFormat        String             @default("yyyy-MM-dd hh:mm a")
+  documentDateFormat        String? // Null means "derive from the document language".
   delegateDocumentOwnership Boolean            @default(false)
 
   typedSignatureEnabled  Boolean @default(true)

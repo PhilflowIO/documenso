@@ -1,4 +1,4 @@
-import { DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
+import { resolveDocumentDateFormat } from '@documenso/lib/constants/date-formats';
 import { PDF_VIEWER_PAGE_SELECTOR } from '@documenso/lib/constants/pdf-viewer';
 import { DEFAULT_DOCUMENT_TIME_ZONE } from '@documenso/lib/constants/time-zones';
 import type { DocumentAndSender } from '@documenso/lib/server-only/document/get-document-by-token';
@@ -386,7 +386,10 @@ export const DocumentSigningPageViewV1 = ({
                   <DocumentSigningDateField
                     key={field.id}
                     field={field}
-                    dateFormat={documentMeta?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT}
+                    dateFormat={resolveDocumentDateFormat({
+                      dateFormat: documentMeta?.dateFormat,
+                      language: documentMeta?.language,
+                    })}
                     timezone={documentMeta?.timezone ?? DEFAULT_DOCUMENT_TIME_ZONE}
                   />
                 ))

@@ -1,5 +1,5 @@
 import type { TLocalField } from '@documenso/lib/client-only/hooks/use-editor-fields';
-import { DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
+import { resolveDocumentDateFormat } from '@documenso/lib/constants/date-formats';
 import { DEFAULT_DOCUMENT_TIME_ZONE } from '@documenso/lib/constants/time-zones';
 import type { TEditorEnvelope } from '@documenso/lib/types/envelope-editor';
 import type { FieldSampleValue } from '@documenso/lib/universal/field-renderer/field-renderer';
@@ -16,7 +16,7 @@ type GetFieldSampleValueOptions = {
   recipient: { name: string; email: string } | undefined;
   documentMeta: Pick<
     TEditorEnvelope['documentMeta'],
-    'dateFormat' | 'timezone' | 'drawSignatureEnabled' | 'uploadSignatureEnabled'
+    'dateFormat' | 'language' | 'timezone' | 'drawSignatureEnabled' | 'uploadSignatureEnabled'
   >;
   i18n: I18n;
 };
@@ -62,7 +62,7 @@ export const getFieldSampleValue = ({
         DateTime.now()
           .setZone(documentMeta.timezone ?? DEFAULT_DOCUMENT_TIME_ZONE)
           .setLocale('en-US')
-          .toFormat(documentMeta.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT),
+          .toFormat(resolveDocumentDateFormat(documentMeta)),
       ),
     )
     .with(FieldType.TEXT, (): FieldSampleValue | null => {

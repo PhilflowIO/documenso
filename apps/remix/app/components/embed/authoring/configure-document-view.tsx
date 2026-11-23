@@ -1,4 +1,3 @@
-import { DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
 import { DEFAULT_DOCUMENT_TIME_ZONE } from '@documenso/lib/constants/time-zones';
 import { ZDocumentEmailSettingsSchema } from '@documenso/lib/types/document-email';
 import { Button } from '@documenso/ui/primitives/button';
@@ -55,7 +54,7 @@ export const ConfigureDocumentView = ({
         message: defaultValues?.meta?.message || '',
         distributionMethod: defaultValues?.meta?.distributionMethod || DocumentDistributionMethod.EMAIL,
         emailSettings: defaultValues?.meta?.emailSettings || ZDocumentEmailSettingsSchema.parse({}),
-        dateFormat: defaultValues?.meta?.dateFormat || DEFAULT_DOCUMENT_DATE_FORMAT,
+        dateFormat: defaultValues?.meta?.dateFormat || null,
         timezone: defaultValues?.meta?.timezone || DEFAULT_DOCUMENT_TIME_ZONE,
         redirectUrl: defaultValues?.meta?.redirectUrl || '',
         language: defaultValues?.meta?.language || 'en',

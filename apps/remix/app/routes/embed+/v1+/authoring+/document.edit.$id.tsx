@@ -1,4 +1,4 @@
-import { DEFAULT_DOCUMENT_DATE_FORMAT, isValidDateFormat } from '@documenso/lib/constants/date-formats';
+import { isValidDateFormat } from '@documenso/lib/constants/date-formats';
 import { DocumentSignatureType } from '@documenso/lib/constants/document';
 import { isValidLanguageCode } from '@documenso/lib/constants/i18n';
 import { DEFAULT_DOCUMENT_TIME_ZONE } from '@documenso/lib/constants/time-zones';
@@ -117,9 +117,7 @@ export default function EmbeddingAuthoringDocumentEditPage() {
       allowDictateNextSigner: document.documentMeta?.allowDictateNextSigner ?? false,
       language: isValidLanguageCode(document.documentMeta?.language) ? document.documentMeta.language : undefined,
       signatureTypes: signatureTypes,
-      dateFormat: isValidDateFormat(document.documentMeta?.dateFormat)
-        ? document.documentMeta?.dateFormat
-        : DEFAULT_DOCUMENT_DATE_FORMAT,
+      dateFormat: isValidDateFormat(document.documentMeta?.dateFormat) ? document.documentMeta?.dateFormat : null,
       redirectUrl: document.documentMeta?.redirectUrl ?? undefined,
     },
     signers: document.recipients.map((recipient) => ({

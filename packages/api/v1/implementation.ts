@@ -1,6 +1,6 @@
 import { getServerLimits } from '@documenso/ee/server-only/limits/server';
 import { NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
-import { DATE_FORMATS, DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
+import { DATE_FORMATS } from '@documenso/lib/constants/date-formats';
 import { DocumentDataType, DocumentStatus, EnvelopeType, SigningStatus } from '@prisma/client';
 import { tsr } from '@ts-rest/serverless/fetch';
 import { match } from 'ts-pattern';
@@ -370,9 +370,10 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         };
       }
 
+      // Without a format the document inherits the team setting or follows its language.
       const dateFormat = body.meta.dateFormat
         ? DATE_FORMATS.find((format) => format.value === body.meta.dateFormat)
-        : DATE_FORMATS.find((format) => format.value === DEFAULT_DOCUMENT_DATE_FORMAT);
+        : undefined;
 
       if (body.meta.dateFormat && !dateFormat) {
         return {
@@ -511,7 +512,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
 
       const dateFormat = meta?.dateFormat
         ? DATE_FORMATS.find((format) => format.value === meta?.dateFormat)
-        : DATE_FORMATS.find((format) => format.value === DEFAULT_DOCUMENT_DATE_FORMAT);
+        : undefined;
 
       if (meta?.dateFormat && !dateFormat) {
         return {

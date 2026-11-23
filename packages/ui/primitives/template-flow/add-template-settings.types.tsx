@@ -1,4 +1,3 @@
-import { DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
 import { DocumentSignatureType } from '@documenso/lib/constants/document';
 import { SUPPORTED_LANGUAGE_CODES } from '@documenso/lib/constants/i18n';
 import { DEFAULT_DOCUMENT_TIME_ZONE } from '@documenso/lib/constants/time-zones';
@@ -26,7 +25,8 @@ export const ZAddTemplateSettingsFormSchema = z.object({
     subject: z.string(),
     message: z.string(),
     timezone: ZDocumentMetaTimezoneSchema.default(DEFAULT_DOCUMENT_TIME_ZONE),
-    dateFormat: ZDocumentMetaDateFormatSchema.default(DEFAULT_DOCUMENT_DATE_FORMAT),
+    // Null follows the document language.
+    dateFormat: ZDocumentMetaDateFormatSchema.nullable(),
     distributionMethod: z.nativeEnum(DocumentDistributionMethod).optional().default(DocumentDistributionMethod.EMAIL),
     redirectUrl: z
       .string()

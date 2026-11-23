@@ -42,12 +42,7 @@ export default function OrganisationSettingsDocumentPage() {
         aiFeaturesEnabled,
       } = data;
 
-      if (
-        documentVisibility === null ||
-        documentLanguage === null ||
-        documentDateFormat === null ||
-        aiFeaturesEnabled === null
-      ) {
+      if (documentVisibility === null || documentLanguage === null || aiFeaturesEnabled === null) {
         throw new Error('Should not be possible.');
       }
 

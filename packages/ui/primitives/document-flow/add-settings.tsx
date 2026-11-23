@@ -1,6 +1,6 @@
 import { useAutoSave } from '@documenso/lib/client-only/hooks/use-autosave';
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
-import { DATE_FORMATS, DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
+import { DATE_FORMATS } from '@documenso/lib/constants/date-formats';
 import { DOCUMENT_SIGNATURE_TYPES } from '@documenso/lib/constants/document';
 import { SUPPORTED_LANGUAGES } from '@documenso/lib/constants/i18n';
 import { DEFAULT_DOCUMENT_TIME_ZONE, TIME_ZONES } from '@documenso/lib/constants/time-zones';
@@ -8,6 +8,10 @@ import type { TDocument } from '@documenso/lib/types/document';
 import type { TRecipientLite } from '@documenso/lib/types/recipient';
 import { extractDocumentAuthMethods } from '@documenso/lib/utils/document-auth';
 import { extractTeamSignatureSettings } from '@documenso/lib/utils/teams';
+import {
+  DOCUMENT_LANGUAGE_DATE_FORMAT_VALUE,
+  DocumentDateFormatLanguageOption,
+} from '@documenso/ui/components/document/document-date-format-language-option';
 import {
   DocumentGlobalAuthAccessSelect,
   DocumentGlobalAuthAccessTooltip,
@@ -101,9 +105,7 @@ export const AddSettingsFormPartial = ({
       meta: {
         timezone:
           TIME_ZONES.find((timezone) => timezone === document.documentMeta?.timezone) ?? DEFAULT_DOCUMENT_TIME_ZONE,
-        dateFormat:
-          DATE_FORMATS.find((format) => format.value === document.documentMeta?.dateFormat)?.value ??
-          DEFAULT_DOCUMENT_DATE_FORMAT,
+        dateFormat: DATE_FORMATS.find((format) => format.value === document.documentMeta?.dateFormat)?.value ?? null,
         redirectUrl: document.documentMeta?.redirectUrl ?? '',
         language: document.documentMeta?.language ?? 'en',
         signatureTypes: extractTeamSignatureSettings(document.documentMeta),
@@ -420,10 +422,10 @@ export const AddSettingsFormPartial = ({
                             <Select
                               {...field}
                               onValueChange={(value) => {
-                                field.onChange(value);
+                                field.onChange(value === DOCUMENT_LANGUAGE_DATE_FORMAT_VALUE ? null : value);
                                 void handleAutoSave();
                               }}
-                              value={field.value}
+                              value={field.value ?? DOCUMENT_LANGUAGE_DATE_FORMAT_VALUE}
                               disabled={documentHasBeenSent}
                             >
                               <SelectTrigger className="bg-background">
@@ -431,6 +433,8 @@ export const AddSettingsFormPartial = ({
                               </SelectTrigger>
 
                               <SelectContent>
+                                <DocumentDateFormatLanguageOption language={form.watch('meta.language')} />
+
                                 {DATE_FORMATS.map((format) => (
                                   <SelectItem key={format.key} value={format.value}>
                                     {format.label}

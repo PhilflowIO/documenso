@@ -166,18 +166,71 @@ export const DATE_FORMATS = [
   value: (typeof VALID_DATE_FORMAT_VALUES)[number];
 }[];
 
+/**
+ * The date format a document gets when nobody chose one, keyed by document language.
+ *
+ * Only date formats the picker already offers are used, and only the date: a signing date on a contract is a
+ * calendar day ("Ort, Datum"), the exact moment is in the audit log. Languages without an entry (including English)
+ * keep `DEFAULT_DOCUMENT_DATE_FORMAT`.
+ */
+const DOCUMENT_LANGUAGE_DATE_FORMATS: Record<string, ValidDateFormat> = {
+  de: 'dd.MM.yyyy',
+  pl: 'dd.MM.yyyy',
+  fr: 'dd/MM/yyyy',
+  es: 'dd/MM/yyyy',
+  it: 'dd/MM/yyyy',
+  'pt-BR': 'dd/MM/yyyy',
+  nl: 'dd-MM-yyyy',
+  ja: 'yyyy-MM-dd',
+  ko: 'yyyy-MM-dd',
+  zh: 'yyyy-MM-dd',
+};
+
+/**
+ * The format a document uses when it has no explicit date format: derived from the document language, because the
+ * date is burned into the document and has to read right in the document's language, not the viewer's.
+ */
+export const getDocumentLanguageDateFormat = (language: string | null | undefined): ValidDateFormat => {
+  if (!language) {
+    return DEFAULT_DOCUMENT_DATE_FORMAT;
+  }
+
+  return DOCUMENT_LANGUAGE_DATE_FORMATS[language] ?? DEFAULT_DOCUMENT_DATE_FORMAT;
+};
+
+type ResolveDocumentDateFormatOptions = {
+  /** The explicitly chosen format; `null`/empty means "follow the document language". */
+  dateFormat: string | null | undefined;
+  language: string | null | undefined;
+};
+
+/**
+ * The single place that turns a stored (possibly unset) date format into the one that is actually rendered.
+ * An explicit format always wins; otherwise the document language decides.
+ */
+export const resolveDocumentDateFormat = ({ dateFormat, language }: ResolveDocumentDateFormatOptions): string => {
+  if (dateFormat) {
+    return dateFormat;
+  }
+
+  return getDocumentLanguageDateFormat(language);
+};
+
 type ConvertToLocalSystemFormatOptions = {
   customText: string;
   dateFormat: string | null | undefined;
+  /** The document language, used when `dateFormat` is unset. */
+  language?: string | null;
   timezone: string | null | undefined;
 };
 
 export const convertToLocalSystemFormat = ({
   customText,
   dateFormat,
+  language,
   timezone,
 }: ConvertToLocalSystemFormatOptions): string => {
-  const coalescedDateFormat = dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT;
+  const coalescedDateFormat = resolveDocumentDateFormat({ dateFormat, language });
   const coalescedTimezone = timezone ?? DEFAULT_DOCUMENT_TIME_ZONE;
 
   const parsedDate = DateTime.fromFormat(customText, coalescedDateFormat, {

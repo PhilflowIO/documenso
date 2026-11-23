@@ -2,6 +2,10 @@ import { DATE_FORMATS } from '@documenso/lib/constants/date-formats';
 import { DOCUMENT_SIGNATURE_TYPES } from '@documenso/lib/constants/document';
 import { SUPPORTED_LANGUAGES } from '@documenso/lib/constants/i18n';
 import { TIME_ZONES } from '@documenso/lib/constants/time-zones';
+import {
+  DOCUMENT_LANGUAGE_DATE_FORMAT_VALUE,
+  DocumentDateFormatLanguageOption,
+} from '@documenso/ui/components/document/document-date-format-language-option';
 import { DocumentEmailCheckboxes } from '@documenso/ui/components/document/document-email-checkboxes';
 import { DocumentSendEmailMessageHelper } from '@documenso/ui/components/document/document-send-email-message-helper';
 import { Combobox } from '@documenso/ui/primitives/combobox';
@@ -142,11 +146,20 @@ export const ConfigureDocumentAdvancedSettings = ({
                       <Trans>Date Format</Trans>
                     </FormLabel>
                     <FormControl>
-                      <Select {...field} onValueChange={field.onChange} disabled={isSubmitting}>
+                      <Select
+                        {...field}
+                        value={field.value ?? DOCUMENT_LANGUAGE_DATE_FORMAT_VALUE}
+                        onValueChange={(value) =>
+                          field.onChange(value === DOCUMENT_LANGUAGE_DATE_FORMAT_VALUE ? null : value)
+                        }
+                        disabled={isSubmitting}
+                      >
                         <SelectTrigger className="bg-background">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          <DocumentDateFormatLanguageOption language={watch('meta.language')} />
+
                           {DATE_FORMATS.map((format) => (
                             <SelectItem key={format.key} value={format.value}>
                               {format.label}

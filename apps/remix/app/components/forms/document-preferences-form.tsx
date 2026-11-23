@@ -11,6 +11,7 @@ import { type TDocumentMetaDateFormat, ZDocumentMetaDateFormatSchema } from '@do
 import { generateDefaultOrganisationSettings, isPersonalLayout } from '@documenso/lib/utils/organisations';
 import { recipientAbbreviation } from '@documenso/lib/utils/recipient-formatter';
 import { extractTeamSignatureSettings, generateDefaultTeamSettings } from '@documenso/lib/utils/teams';
+import { DocumentDateFormatLanguageOption } from '@documenso/ui/components/document/document-date-format-language-option';
 import { DocumentSignatureSettingsTooltip } from '@documenso/ui/components/document/document-signature-settings-tooltip';
 import { RecipientRoleSelect } from '@documenso/ui/components/recipient/recipient-role-select';
 import { AvatarWithText } from '@documenso/ui/primitives/avatar';
@@ -268,6 +269,11 @@ export const DocumentPreferencesForm = ({ settings, onFormSubmit, canInherit }: 
                     </SelectTrigger>
 
                     <SelectContent>
+                      {/* Organisations store no format to follow the document language; teams store none to inherit. */}
+                      {!canInherit && (
+                        <DocumentDateFormatLanguageOption value="-1" language={form.watch('documentLanguage')} />
+                      )}
+
                       {DATE_FORMATS.map((format) => (
                         <SelectItem key={format.key} value={format.value}>
                           {format.label}
@@ -282,6 +288,15 @@ export const DocumentPreferencesForm = ({ settings, onFormSubmit, canInherit }: 
                     </SelectContent>
                   </Select>
                 </FormControl>
+
+                {!canInherit && (
+                  <FormDescription>
+                    <Trans>
+                      Controls the default date format of new documents. By default, dates follow the document language;
+                      choosing a format applies it to all new documents.
+                    </Trans>
+                  </FormDescription>
+                )}
 
                 <FormMessage />
               </InheritableField>

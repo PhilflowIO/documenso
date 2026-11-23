@@ -1,5 +1,5 @@
 import { extendZodWithOpenApi } from '@anatine/zod-openapi';
-import { DATE_FORMATS, DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
+import { DATE_FORMATS } from '@documenso/lib/constants/date-formats';
 import { SUPPORTED_LANGUAGE_CODES } from '@documenso/lib/constants/i18n';
 import { DEFAULT_DOCUMENT_TIME_ZONE, TIME_ZONES } from '@documenso/lib/constants/time-zones';
 import { ZUrlSchema } from '@documenso/lib/schemas/common';
@@ -159,9 +159,10 @@ export const ZCreateDocumentMutationSchema = z.object({
       }),
       dateFormat: z
         .string()
-        .default(DEFAULT_DOCUMENT_DATE_FORMAT)
+        .optional()
         .openapi({
-          description: 'The format of the date. Must be one of the options listed in the list below.',
+          description:
+            'The format of the date. Must be one of the options listed in the list below. Defaults to the team setting, otherwise to the format of the document language.',
           enum: DATE_FORMATS.map((format) => format.value),
         }),
       redirectUrl: z.string(),

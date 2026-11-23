@@ -114,7 +114,8 @@ export const ZDocumentMetaCreateSchema = z.object({
   subject: ZDocumentMetaSubjectSchema.optional(),
   message: ZDocumentMetaMessageSchema.optional(),
   timezone: ZDocumentMetaTimezoneSchema.optional(),
-  dateFormat: ZDocumentMetaDateFormatSchema.optional(),
+  // Null means "derive the format from the document language".
+  dateFormat: ZDocumentMetaDateFormatSchema.nullish(),
   distributionMethod: ZDocumentMetaDistributionMethodSchema.optional(),
   signingOrder: z.nativeEnum(DocumentSigningOrder).optional(),
   allowDictateNextSigner: z.boolean().optional(),

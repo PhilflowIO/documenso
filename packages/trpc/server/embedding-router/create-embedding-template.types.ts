@@ -54,7 +54,7 @@ export const ZCreateEmbeddingTemplateRequestSchema = z.object({
       subject: ZDocumentMetaSubjectSchema.optional(),
       message: ZDocumentMetaMessageSchema.optional(),
       timezone: ZDocumentMetaTimezoneSchema.optional(),
-      dateFormat: ZDocumentMetaDateFormatSchema.optional(),
+      dateFormat: ZDocumentMetaDateFormatSchema.nullish(),
       distributionMethod: ZDocumentMetaDistributionMethodSchema.optional(),
       signingOrder: z.nativeEnum(DocumentSigningOrder).optional(),
       redirectUrl: ZDocumentMetaRedirectUrlSchema.optional(),

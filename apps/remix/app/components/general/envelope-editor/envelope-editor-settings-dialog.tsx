@@ -1,6 +1,6 @@
 import { useCurrentEnvelopeEditor } from '@documenso/lib/client-only/providers/envelope-editor-provider';
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
-import { DATE_FORMATS, DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
+import { DATE_FORMATS } from '@documenso/lib/constants/date-formats';
 import { DOCUMENT_DISTRIBUTION_METHODS, DOCUMENT_SIGNATURE_TYPES } from '@documenso/lib/constants/document';
 import { ZEnvelopeExpirationPeriod } from '@documenso/lib/constants/envelope-expiration';
 import { ZEnvelopeReminderSettings } from '@documenso/lib/constants/envelope-reminder';
@@ -20,6 +20,10 @@ import { isHttpUrl } from '@documenso/lib/utils/is-http-url';
 import { canAccessTeamDocument, DocumentSignatureType, extractTeamSignatureSettings } from '@documenso/lib/utils/teams';
 import { zEmail } from '@documenso/lib/utils/zod';
 import { trpc } from '@documenso/trpc/react';
+import {
+  DOCUMENT_LANGUAGE_DATE_FORMAT_VALUE,
+  DocumentDateFormatLanguageOption,
+} from '@documenso/ui/components/document/document-date-format-language-option';
 import { DocumentEmailCheckboxes } from '@documenso/ui/components/document/document-email-checkboxes';
 import {
   DocumentGlobalAuthAccessSelect,
@@ -100,7 +104,8 @@ export const ZAddSettingsFormSchema = z.object({
     subject: z.string(),
     message: z.string(),
     timezone: ZDocumentMetaTimezoneSchema.default(DEFAULT_DOCUMENT_TIME_ZONE),
-    dateFormat: ZDocumentMetaDateFormatSchema.default(DEFAULT_DOCUMENT_DATE_FORMAT),
+    // Null follows the document language.
+    dateFormat: ZDocumentMetaDateFormatSchema.nullable(),
     distributionMethod: z.nativeEnum(DocumentDistributionMethod).optional().default(DocumentDistributionMethod.EMAIL),
     redirectUrl: z
       .string()
@@ -200,7 +205,7 @@ export const EnvelopeEditorSettingsDialog = ({ trigger, ...props }: EnvelopeEdit
         message: envelope.documentMeta.message ?? '',
         timezone: envelope.documentMeta.timezone ?? DEFAULT_DOCUMENT_TIME_ZONE,
         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-        dateFormat: (envelope.documentMeta.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT) as TDocumentMetaDateFormat,
+        dateFormat: (envelope.documentMeta.dateFormat as TDocumentMetaDateFormat | null) ?? null,
         distributionMethod: envelope.documentMeta.distributionMethod || DocumentDistributionMethod.EMAIL,
         redirectUrl: envelope.documentMeta.redirectUrl ?? '',
         language: envelope.documentMeta.language ?? 'en',
@@ -485,8 +490,10 @@ export const EnvelopeEditorSettingsDialog = ({ trigger, ...props }: EnvelopeEdit
 
                               <FormControl>
                                 <Select
-                                  value={field.value}
-                                  onValueChange={field.onChange}
+                                  value={field.value ?? DOCUMENT_LANGUAGE_DATE_FORMAT_VALUE}
+                                  onValueChange={(value) =>
+                                    field.onChange(value === DOCUMENT_LANGUAGE_DATE_FORMAT_VALUE ? null : value)
+                                  }
                                   disabled={envelopeHasBeenSent}
                                 >
                                   <SelectTrigger className="bg-background">
@@ -494,6 +501,8 @@ export const EnvelopeEditorSettingsDialog = ({ trigger, ...props }: EnvelopeEdit
                                   </SelectTrigger>
 
                                   <SelectContent>
+                                    <DocumentDateFormatLanguageOption language={form.watch('meta.language')} />
+
                                     {DATE_FORMATS.map((format) => (
                                       <SelectItem key={format.key} value={format.value}>
                                         {format.label}

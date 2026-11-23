@@ -38,7 +38,7 @@ export type DocumentField = Field & {
 
 export type DocumentReadOnlyFieldsProps = {
   fields: DocumentField[];
-  documentMeta?: Pick<DocumentMeta, 'dateFormat' | 'timezone'>;
+  documentMeta?: Pick<DocumentMeta, 'dateFormat' | 'language' | 'timezone'>;
 
   showFieldStatus?: boolean;
 

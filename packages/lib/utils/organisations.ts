@@ -2,7 +2,6 @@ import type { ORGANISATION_MEMBER_ROLE_MAP } from '@documenso/lib/constants/orga
 import type { Organisation, OrganisationGlobalSettings, Prisma } from '@prisma/client';
 import { DocumentVisibility, type OrganisationGroup, OrganisationMemberRole } from '@prisma/client';
 
-import { DEFAULT_DOCUMENT_DATE_FORMAT } from '../constants/date-formats';
 import { DEFAULT_ENVELOPE_EXPIRATION_PERIOD } from '../constants/envelope-expiration';
 import { DEFAULT_ENVELOPE_REMINDER_SETTINGS } from '../constants/envelope-reminder';
 import {
@@ -121,7 +120,7 @@ export const generateDefaultOrganisationSettings = (): Omit<OrganisationGlobalSe
     documentVisibility: DocumentVisibility.EVERYONE,
     documentLanguage: 'en',
     documentTimezone: null, // Null means local timezone.
-    documentDateFormat: DEFAULT_DOCUMENT_DATE_FORMAT,
+    documentDateFormat: null, // Null means derive from the document language.
     delegateDocumentOwnership: false,
 
     includeSenderDetails: true,

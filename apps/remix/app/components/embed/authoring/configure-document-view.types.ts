@@ -28,7 +28,8 @@ export const ZConfigureEmbedFormSchema = z.object({
     message: z.string().optional(),
     distributionMethod: z.nativeEnum(DocumentDistributionMethod),
     emailSettings: ZDocumentEmailSettingsSchema,
-    dateFormat: ZDocumentMetaDateFormatSchema.optional(),
+    // Null follows the document language.
+    dateFormat: ZDocumentMetaDateFormatSchema.nullish(),
     timezone: z.string().min(1, 'Timezone is required'),
     redirectUrl: z.string().optional(),
     language: ZDocumentMetaLanguageSchema.optional(),

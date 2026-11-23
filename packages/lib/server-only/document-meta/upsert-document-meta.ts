@@ -20,7 +20,7 @@ export type CreateDocumentMetaOptions = {
   subject?: string;
   message?: string;
   timezone?: string;
-  dateFormat?: string;
+  dateFormat?: string | null; // Null follows the document language.
   redirectUrl?: string;
   emailId?: string | null;
   emailReplyTo?: string | null;

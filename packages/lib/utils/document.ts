@@ -46,7 +46,7 @@ export const extractDerivedDocumentMeta = (
   return {
     language: meta.language || settings.documentLanguage,
     timezone: meta.timezone || settings.documentTimezone || DEFAULT_DOCUMENT_TIME_ZONE,
-    dateFormat: meta.dateFormat || settings.documentDateFormat,
+    dateFormat: meta.dateFormat || settings.documentDateFormat || null, // Null follows `language`.
     message: meta.message || null,
     subject: meta.subject || null,
     redirectUrl: meta.redirectUrl || null,

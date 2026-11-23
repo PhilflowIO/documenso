@@ -19,6 +19,7 @@ import {
 import pMap from 'p-map';
 
 import { validateCheckboxLength } from '../../advanced-fields-validation/validate-checkbox';
+import { resolveDocumentDateFormat } from '../../constants/date-formats';
 import { DIRECT_TEMPLATE_RECIPIENT_EMAIL } from '../../constants/direct-templates';
 import { AppError, AppErrorCode } from '../../errors/app-error';
 import { jobs } from '../../jobs/client';
@@ -165,6 +166,23 @@ export const sendDocument = async ({ id, userId, teamId, sendEmail, requestMetad
     signingOrder = DocumentSigningOrder.SEQUENTIAL;
 
     envelope.documentMeta.signingOrder = DocumentSigningOrder.SEQUENTIAL;
+  }
+
+  // A document without an explicit date format follows its language. The language can still be edited after
+  // sending, the date format cannot, so pin the derived format now: every recipient signs with the same format.
+  if (envelope.documentMeta && !envelope.documentMeta.dateFormat) {
+    const dateFormat = resolveDocumentDateFormat(envelope.documentMeta);
+
+    await prisma.documentMeta.update({
+      where: {
+        id: envelope.documentMeta.id,
+      },
+      data: {
+        dateFormat,
+      },
+    });
+
+    envelope.documentMeta.dateFormat = dateFormat;
   }
 
   let recipientsToNotify = envelope.recipients;

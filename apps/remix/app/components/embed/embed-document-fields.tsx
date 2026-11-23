@@ -1,4 +1,4 @@
-import { DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
+import { resolveDocumentDateFormat } from '@documenso/lib/constants/date-formats';
 import { PDF_VIEWER_PAGE_SELECTOR } from '@documenso/lib/constants/pdf-viewer';
 import { DEFAULT_DOCUMENT_TIME_ZONE } from '@documenso/lib/constants/time-zones';
 import {
@@ -33,7 +33,7 @@ export type EmbedDocumentFieldsProps = {
   fields: Field[];
   metadata?: Pick<
     DocumentMeta,
-    'timezone' | 'dateFormat' | 'typedSignatureEnabled' | 'uploadSignatureEnabled' | 'drawSignatureEnabled'
+    'timezone' | 'dateFormat' | 'language' | 'typedSignatureEnabled' | 'uploadSignatureEnabled' | 'drawSignatureEnabled'
   > | null;
   onSignField?: (value: TSignFieldWithTokenMutationSchema) => Promise<void> | void;
   onUnsignField?: (value: TRemovedSignedFieldWithTokenMutationSchema) => Promise<void> | void;
@@ -85,7 +85,7 @@ export const EmbedDocumentFields = ({
               field={field}
               onSignField={onSignField}
               onUnsignField={onUnsignField}
-              dateFormat={metadata?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT}
+              dateFormat={resolveDocumentDateFormat({ dateFormat: metadata?.dateFormat, language: metadata?.language })}
               timezone={metadata?.timezone ?? DEFAULT_DOCUMENT_TIME_ZONE}
             />
           ))

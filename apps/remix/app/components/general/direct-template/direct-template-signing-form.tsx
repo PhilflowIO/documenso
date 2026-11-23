@@ -1,4 +1,4 @@
-import { DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
+import { resolveDocumentDateFormat } from '@documenso/lib/constants/date-formats';
 import { PDF_VIEWER_PAGE_SELECTOR } from '@documenso/lib/constants/pdf-viewer';
 import { DEFAULT_DOCUMENT_TIME_ZONE } from '@documenso/lib/constants/time-zones';
 import {
@@ -112,7 +112,12 @@ export const DirectTemplateSigningForm = ({
         if (field.type === FieldType.DATE) {
           tempField.customText = DateTime.now()
             .setZone(template.templateMeta?.timezone ?? DEFAULT_DOCUMENT_TIME_ZONE)
-            .toFormat(template.templateMeta?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT);
+            .toFormat(
+              resolveDocumentDateFormat({
+                dateFormat: template.templateMeta?.dateFormat,
+                language: template.templateMeta?.language,
+              }),
+            );
         }
         return tempField;
       }),
@@ -275,7 +280,10 @@ export const DirectTemplateSigningForm = ({
                 <DocumentSigningDateField
                   key={field.id}
                   field={field}
-                  dateFormat={template.templateMeta?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT}
+                  dateFormat={resolveDocumentDateFormat({
+                    dateFormat: template.templateMeta?.dateFormat,
+                    language: template.templateMeta?.language,
+                  })}
                   timezone={template.templateMeta?.timezone ?? DEFAULT_DOCUMENT_TIME_ZONE}
                   onSignField={onSignField}
                   onUnsignField={onUnsignField}

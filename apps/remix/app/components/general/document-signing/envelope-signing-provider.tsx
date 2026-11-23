@@ -1,4 +1,4 @@
-import { DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
+import { resolveDocumentDateFormat } from '@documenso/lib/constants/date-formats';
 import { isBase64Image } from '@documenso/lib/constants/signatures';
 import { DEFAULT_DOCUMENT_TIME_ZONE } from '@documenso/lib/constants/time-zones';
 import { DO_NOT_INVALIDATE_QUERY_ON_MUTATION } from '@documenso/lib/constants/trpc';
@@ -82,11 +82,11 @@ export interface EnvelopeSigningProviderProps {
  * The dates are filled in correctly when the recipient "completes" the document.
  */
 const prefillDateFields = (data: EnvelopeForSigningResponse): EnvelopeForSigningResponse => {
-  const { timezone, dateFormat } = data.envelope.documentMeta;
+  const { timezone } = data.envelope.documentMeta;
 
   const formattedDate = DateTime.now()
     .setZone(timezone ?? DEFAULT_DOCUMENT_TIME_ZONE)
-    .toFormat(dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT);
+    .toFormat(resolveDocumentDateFormat(data.envelope.documentMeta));
 
   const prefillField = <T extends { type: FieldType; inserted: boolean; customText: string; fieldMeta: unknown }>(
     field: T,

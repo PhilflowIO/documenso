@@ -1,6 +1,6 @@
 import { useAutoSave } from '@documenso/lib/client-only/hooks/use-autosave';
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
-import { DATE_FORMATS, DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
+import { DATE_FORMATS } from '@documenso/lib/constants/date-formats';
 import { DOCUMENT_DISTRIBUTION_METHODS, DOCUMENT_SIGNATURE_TYPES } from '@documenso/lib/constants/document';
 import { SUPPORTED_LANGUAGES } from '@documenso/lib/constants/i18n';
 import { DEFAULT_DOCUMENT_TIME_ZONE, TIME_ZONES } from '@documenso/lib/constants/time-zones';
@@ -11,6 +11,10 @@ import type { TTemplate } from '@documenso/lib/types/template';
 import { extractDocumentAuthMethods } from '@documenso/lib/utils/document-auth';
 import { extractTeamSignatureSettings } from '@documenso/lib/utils/teams';
 import { trpc } from '@documenso/trpc/react';
+import {
+  DOCUMENT_LANGUAGE_DATE_FORMAT_VALUE,
+  DocumentDateFormatLanguageOption,
+} from '@documenso/ui/components/document/document-date-format-language-option';
 import {
   DocumentGlobalAuthAccessSelect,
   DocumentGlobalAuthAccessTooltip,
@@ -113,7 +117,7 @@ export const AddTemplateSettingsFormPartial = ({
         message: template.templateMeta?.message ?? '',
         timezone: template.templateMeta?.timezone ?? DEFAULT_DOCUMENT_TIME_ZONE,
         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-        dateFormat: (template.templateMeta?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT) as TDocumentMetaDateFormat,
+        dateFormat: (template.templateMeta?.dateFormat as TDocumentMetaDateFormat | null) ?? null,
         distributionMethod: template.templateMeta?.distributionMethod || DocumentDistributionMethod.EMAIL,
         redirectUrl: template.templateMeta?.redirectUrl ?? '',
         language: template.templateMeta?.language ?? 'en',
@@ -648,15 +652,18 @@ export const AddTemplateSettingsFormPartial = ({
                             <Select
                               {...field}
                               onValueChange={(value) => {
-                                field.onChange(value);
+                                field.onChange(value === DOCUMENT_LANGUAGE_DATE_FORMAT_VALUE ? null : value);
                                 void handleAutoSave();
                               }}
+                              value={field.value ?? DOCUMENT_LANGUAGE_DATE_FORMAT_VALUE}
                             >
                               <SelectTrigger className="bg-background">
                                 <SelectValue />
                               </SelectTrigger>
 
                               <SelectContent>
+                                <DocumentDateFormatLanguageOption language={form.watch('meta.language')} />
+
                                 {DATE_FORMATS.map((format) => (
                                   <SelectItem key={format.key} value={format.value}>
                                     {format.label}
