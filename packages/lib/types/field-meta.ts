@@ -444,11 +444,15 @@ const FIELD_TYPES_ON_LINE_BY_DEFAULT: FieldType[] = [
   FieldType.NAME,
   FieldType.DATE,
   FieldType.EMAIL,
+  FieldType.TEXT,
+  FieldType.NUMBER,
 ];
 
 /**
  * The meta for a field newly placed in the editor. Fields that are usually
- * filled in on a signing line start on the line.
+ * filled in on a signing line start on the line. That includes text and number
+ * fields: a new field is one line high, and next to a date field (as in
+ * "Place, date: ____") its text has to sit on the same line.
  *
  * Kept apart from `FIELD_META_DEFAULT_VALUES`, which also backs API and server
  * defaults whose rendering must not change.
