@@ -47,7 +47,6 @@
     "node": ">=24.0.0"
   },
   "allowScripts": {
-    "@documenso/skia-canvas": true,
     "@playwright/browser-chromium": true,
     "@prisma/client": true,
     "@prisma/engines": true,
@@ -67,7 +66,7 @@
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@datadog/pprof": "^5.13.5",
-    "@documenso/skia-canvas": "^3.0.8-documenso.3",
+    "skia-canvas": "^4.0.1",
     "@lingui/cli": "^5.6.0",
     "@prisma/client": "^6.19.0",
     "@trpc/client": "11.17.0",

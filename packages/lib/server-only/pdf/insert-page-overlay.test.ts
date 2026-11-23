@@ -2,10 +2,10 @@ import { readFileSync } from 'node:fs';
 
 import path from 'node:path';
 import type { FieldWithSignature } from '@documenso/prisma/types/field-with-signature';
-import { Canvas, Image as SkiaImage } from '@documenso/skia-canvas';
 import { PDF, PdfArray, PdfDict, PdfNumber } from '@libpdf/core';
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import sharp from 'sharp';
+import { Canvas, Image as SkiaImage } from 'skia-canvas';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { EnvelopeContentShapeType, EnvelopeContentType } from '../../types/envelope-content-meta';
@@ -147,7 +147,7 @@ const createSignatureFieldOverlay = async (verticalAlign?: TFieldMetaVerticalAli
  * An inserted text field without descenders, so the bottom of its glyphs is
  * the baseline.
  */
-const createTextFieldOverlay = (): Overlay => {
+const createTextFieldOverlay = (fontSize = 24): Overlay => {
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const field = {
     id: 1,
@@ -160,7 +160,7 @@ const createTextFieldOverlay = (): Overlay => {
     ...RECT,
     customText: 'HHHH',
     inserted: true,
-    fieldMeta: { type: 'text', fontSize: 24, verticalAlign: 'baseline' },
+    fieldMeta: { type: 'text', fontSize, verticalAlign: 'baseline' },
     signature: null,
   } as unknown as FieldWithSignature;
 
@@ -245,20 +245,10 @@ function SkiaCanvasFactory() {
 }
 
 /**
- * Burn a content into page 1 via the real overlay pipeline, rasterize the
- * result with pdf.js exactly like the client viewer does, and return the
- * pixel bounds of the matching pixels alongside the bounds the client would
- * draw the `RECT` box at.
+ * Burn a content into page 1 via the real overlay pipeline and return the
+ * sealed PDF loaded into pdf.js, the way the client viewer loads it.
  */
-const roundtrip = async ({
-  size,
-  rotation,
-  cropBox,
-  mediaBox,
-  inherit,
-  overlay = RED_RECTANGLE_OVERLAY,
-  matchPixel = isRed,
-}: PageSetup) => {
+const burnIn = async ({ size, rotation, cropBox, mediaBox, inherit, overlay = RED_RECTANGLE_OVERLAY }: PageSetup) => {
   let pdfDoc: PDF;
 
   if (size) {
@@ -313,9 +303,20 @@ const roundtrip = async ({
 
   const sealed = await pdfDoc.save({ useXRefStream: true });
 
-  // Rasterize like the client: the scale is relative to the viewport at scale 1.
   const doc = await pdfjs.getDocument({ data: sealed.slice(), CanvasFactory: SkiaCanvasFactory }).promise;
-  const pdfjsPage = await doc.getPage(1);
+
+  return doc.getPage(1);
+};
+
+/**
+ * Burn a content into page 1, rasterize the result with pdf.js exactly like
+ * the client viewer does, and return the pixel bounds of the matching pixels
+ * alongside the bounds the client would draw the `RECT` box at.
+ */
+const roundtrip = async ({ matchPixel = isRed, ...setup }: PageSetup) => {
+  const pdfjsPage = await burnIn(setup);
+
+  // Rasterize like the client: the scale is relative to the viewport at scale 1.
   const baseViewport = pdfjsPage.getViewport({ scale: 1 });
   const scale = RENDER_WIDTH / baseViewport.width;
   const viewport = pdfjsPage.getViewport({ scale });
@@ -397,6 +398,32 @@ const A4_SIZE = { width: 595.276, height: 841.89 };
  * several pixels wide at the render width.
  */
 const HALF_POINT_SIZE = { width: 300.5, height: 400.5 };
+
+/**
+ * The distance in points between the baseline pdf.js reads from the burned in
+ * text and the bottom of the `RECT` field, in the rotated viewer space the
+ * client lays fields out in.
+ *
+ * Read from the text matrix rather than rasterized, since the errors this
+ * guards against are fractions of a point that antialiasing would swallow.
+ */
+const getBaselineOffset = async (pdfjsPage: Awaited<ReturnType<typeof burnIn>>) => {
+  const viewport = pdfjsPage.getViewport({ scale: 1 });
+  const { items } = await pdfjsPage.getTextContent();
+
+  const [text] = items.filter((item) => 'transform' in item && item.str.trim() !== '');
+
+  if (!text || !('transform' in text)) {
+    throw new Error('Expected the burned in text to be extractable');
+  }
+
+  const [, , , , originX, originY] = text.transform;
+  const [, baselineY] = viewport.convertToViewportPoint(originX, originY);
+
+  const fieldBottom = ((RECT.positionY + RECT.height) / 100) * viewport.height;
+
+  return Math.abs(baselineY - fieldBottom);
+};
 
 describe('insertPageOverlays', () => {
   it('aligns with the client on a standard page', async () => {
@@ -512,6 +539,20 @@ describe('insertPageOverlays', () => {
 
     // Glyph outlines are antialiased, so allow half a point.
     expect(Math.abs(actual.maxY + 1 - edges.bottom)).toBeLessThan(0.5 * scale);
+  }, 60000);
+
+  it.each([
+    8, 10.5, 12, 24, 96,
+  ])('places the baseline of %f pt text exactly on the line, not at a rounded ascent', async (fontSize) => {
+    const pdfjsPage = await burnIn({ size: { width: 612, height: 792 }, overlay: createTextFieldOverlay(fontSize) });
+
+    expect(await getBaselineOffset(pdfjsPage)).toBeLessThan(0.01);
+  }, 60000);
+
+  it('places the baseline of text exactly on the line of an A4 page rotated 270 degrees', async () => {
+    const pdfjsPage = await burnIn({ size: A4_SIZE, rotation: 270, overlay: createTextFieldOverlay(12) });
+
+    expect(await getBaselineOffset(pdfjsPage)).toBeLessThan(0.01);
   }, 60000);
 
   it('renders a signature without an alignment as before: the whole pad, centered', async () => {

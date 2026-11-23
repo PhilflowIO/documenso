@@ -1,7 +1,7 @@
 import { prisma } from '@documenso/prisma';
-import { Image as SkiaImage } from '@documenso/skia-canvas';
 import type { EnvelopeContent } from '@prisma/client';
 import pMap from 'p-map';
+import { Image as SkiaImage } from 'skia-canvas';
 
 import { DataContentType } from '../../types/data-content-meta';
 import type { ContentImageMap, ContentImageSource } from '../../universal/content-renderer/content-renderer';

@@ -122,7 +122,7 @@ export default defineConfig({
         'nodemailer',
         /playwright/,
         '@playwright/browser-chromium',
-        '@documenso/skia-canvas',
+        'skia-canvas',
       ],
     },
   },
