@@ -370,10 +370,9 @@ const roundtrip = async ({
  * Pixel indices address the near side of a pixel, so the far edges compare
  * against the index plus one.
  */
-const expectAligned = (
-  { actual, edges, halfStroke }: Awaited<ReturnType<typeof roundtrip>>,
-  { tolerance = 1.5 }: { tolerance?: number } = {},
-) => {
+const expectAligned = ({ actual, edges, halfStroke }: Awaited<ReturnType<typeof roundtrip>>) => {
+  const tolerance = 1.5;
+
   const outer = {
     left: edges.left - halfStroke,
     right: edges.right + halfStroke,
@@ -392,23 +391,27 @@ const expectAligned = (
  */
 const A4_SIZE = { width: 595.276, height: 841.89 };
 
+/**
+ * Skia writes the overlay page rounded to whole points, so half a point is the
+ * largest size mismatch it can produce. The small page keeps that mismatch
+ * several pixels wide at the render width.
+ */
+const HALF_POINT_SIZE = { width: 300.5, height: 400.5 };
+
 describe('insertPageOverlays', () => {
   it('aligns with the client on a standard page', async () => {
     expectAligned(await roundtrip({}));
   }, 60000);
 
-  // The following tests depend on @libpdf/core resolving inherited page
-  // attributes and offset MediaBox/CropBox values correctly, which is fixed in
-  // the next patch release. Re-enable them once the library is upgraded.
-  it.skip('aligns with the client on a page with an offset crop box', async () => {
+  it('aligns with the client on a page with an offset crop box', async () => {
     expectAligned(await roundtrip({ cropBox: [30, 40, 582, 752] }));
   }, 60000);
 
-  it.skip('aligns with the client on a page with an offset media box', async () => {
+  it('aligns with the client on a page with an offset media box', async () => {
     expectAligned(await roundtrip({ mediaBox: [20, 30, 632, 822] }));
   }, 60000);
 
-  it.skip('aligns with the client on a page with inherited attributes', async () => {
+  it('aligns with the client on a page with inherited attributes', async () => {
     expectAligned(await roundtrip({ rotation: 90, inherit: true }));
   }, 60000);
 
@@ -424,18 +427,24 @@ describe('insertPageOverlays', () => {
     expectAligned(await roundtrip({ rotation: 270 }));
   }, 60000);
 
-  it.skip('aligns with the client on a rotated page with an offset crop box', async () => {
-    expectAligned(await roundtrip({ rotation: 90, cropBox: [30, 40, 582, 752] }));
+  it.each([
+    90, 180, 270,
+  ] as const)('aligns with the client on a page with an offset crop box rotated %i degrees', async (rotation) => {
+    expectAligned(await roundtrip({ rotation, cropBox: [30, 40, 582, 752] }));
   }, 60000);
 
-  it('aligns with the client on a page with a fractional size, within the accepted residual', async () => {
-    const result = await roundtrip({ size: A4_SIZE });
+  it('aligns with the client on a page whose crop box overhangs a media box with a negative origin', async () => {
+    expectAligned(await roundtrip({ rotation: 90, mediaBox: [-40, 25, 572, 817], cropBox: [-60, 45, 552, 900] }));
+  }, 60000);
 
-    // Skia writes the overlay page at a whole point size, leaving a residual
-    // of at most half a point on fractional pages, which is accepted.
-    const scale = RENDER_WIDTH / A4_SIZE.width;
+  it.each([
+    0, 90, 180, 270,
+  ] as const)('aligns with the client on a page half a point off whole points rotated %i degrees', async (rotation) => {
+    expectAligned(await roundtrip({ size: HALF_POINT_SIZE, rotation }));
+  }, 60000);
 
-    expectAligned(result, { tolerance: 1.5 + 0.5 * scale });
+  it('aligns with the client on an A4 page rotated 270 degrees', async () => {
+    expectAligned(await roundtrip({ size: A4_SIZE, rotation: 270 }));
   }, 60000);
 
   it('burns an image content into the page, fitted within its box', async () => {
