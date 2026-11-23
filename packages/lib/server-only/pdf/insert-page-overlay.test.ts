@@ -316,18 +316,16 @@ describe('insertPageOverlays', () => {
     expectAligned(await roundtrip({}));
   }, 60000);
 
-  it('aligns with the client on a page with inherited attributes', async () => {
-    expectAligned(await roundtrip({ rotation: 90, inherit: true }));
-  }, 60000);
-
-  // The following tests need the overlay drawn at the origin of the visible
-  // box, which does not have to be the user space origin.
-  it.skip('aligns with the client on a page with an offset crop box', async () => {
+  it('aligns with the client on a page with an offset crop box', async () => {
     expectAligned(await roundtrip({ cropBox: [30, 40, 582, 752] }));
   }, 60000);
 
-  it.skip('aligns with the client on a page with an offset media box', async () => {
+  it('aligns with the client on a page with an offset media box', async () => {
     expectAligned(await roundtrip({ mediaBox: [20, 30, 632, 822] }));
+  }, 60000);
+
+  it('aligns with the client on a page with inherited attributes', async () => {
+    expectAligned(await roundtrip({ rotation: 90, inherit: true }));
   }, 60000);
 
   it('aligns with the client on a page rotated 90 degrees', async () => {
@@ -342,8 +340,16 @@ describe('insertPageOverlays', () => {
     expectAligned(await roundtrip({ rotation: 270 }));
   }, 60000);
 
-  it.skip('aligns with the client on a rotated page with an offset crop box', async () => {
-    expectAligned(await roundtrip({ rotation: 90, cropBox: [30, 40, 582, 752] }));
+  it.each([90, 180, 270] as const)(
+    'aligns with the client on a page with an offset crop box rotated %i degrees',
+    async (rotation) => {
+      expectAligned(await roundtrip({ rotation, cropBox: [30, 40, 582, 752] }));
+    },
+    60000,
+  );
+
+  it('aligns with the client on a page whose crop box overhangs a media box with a negative origin', async () => {
+    expectAligned(await roundtrip({ rotation: 90, mediaBox: [-40, 25, 572, 817], cropBox: [-60, 45, 552, 900] }));
   }, 60000);
 
   it('aligns with the client on a page with a fractional size, within the accepted residual', async () => {
