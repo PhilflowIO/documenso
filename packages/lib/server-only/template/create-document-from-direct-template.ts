@@ -270,7 +270,10 @@ export const createDocumentFromDirectTemplate = async ({
     strict: false,
   });
 
-  const derivedDocumentMeta = extractDerivedDocumentMeta(settings, directTemplateEnvelope.documentMeta, signatureLevel);
+  const derivedDocumentMeta = extractDerivedDocumentMeta(settings, directTemplateEnvelope.documentMeta, {
+    signatureLevel,
+    creatorLanguage: requestMetadata.requestMetadata.language,
+  });
 
   // The resulting document contains every non-direct template recipient plus the
   // direct recipient that is signing now. A recipientCount of 0 means unlimited.

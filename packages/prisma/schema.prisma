@@ -1016,7 +1016,7 @@ model OrganisationGlobalSettings {
   organisation Organisation?
 
   documentVisibility        DocumentVisibility @default(EVERYONE)
-  documentLanguage          String             @default("en")
+  documentLanguage          String? // Null means "the interface language of whoever creates the document".
   includeSenderDetails      Boolean            @default(true)
   includeSigningCertificate Boolean            @default(true)
   includeAuditLog           Boolean            @default(false)

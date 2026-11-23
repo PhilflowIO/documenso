@@ -579,14 +579,14 @@ export const createDocumentFromTemplate = async ({
         distributionMethod: override?.distributionMethod || template.documentMeta?.distributionMethod,
         emailSettings: override?.emailSettings || template.documentMeta?.emailSettings,
         signingOrder: override?.signingOrder || template.documentMeta?.signingOrder,
-        language: override?.language || template.documentMeta?.language || settings.documentLanguage,
+        language: override?.language || template.documentMeta?.language,
         typedSignatureEnabled: override?.typedSignatureEnabled ?? template.documentMeta?.typedSignatureEnabled,
         uploadSignatureEnabled: override?.uploadSignatureEnabled ?? template.documentMeta?.uploadSignatureEnabled,
         drawSignatureEnabled: override?.drawSignatureEnabled ?? template.documentMeta?.drawSignatureEnabled,
         allowDictateNextSigner: override?.allowDictateNextSigner ?? template.documentMeta?.allowDictateNextSigner,
         envelopeExpirationPeriod: override?.envelopeExpirationPeriod ?? template.documentMeta?.envelopeExpirationPeriod,
       },
-      signatureLevel,
+      { signatureLevel, creatorLanguage: requestMetadata.requestMetadata.language },
     ),
   });
 

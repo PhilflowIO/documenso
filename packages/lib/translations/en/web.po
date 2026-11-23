@@ -18,6 +18,14 @@ msgid ".PDF documents accepted (max {APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB)"
 msgstr ".PDF documents accepted (max {APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB)"
 
 #: apps/remix/app/components/forms/document-preferences-form.tsx
+msgid "Controls the language of new documents, their emails to recipients and the signed PDF. If not set, each document uses the interface language of the person who creates it."
+msgstr "Controls the language of new documents, their emails to recipients and the signed PDF. If not set, each document uses the interface language of the person who creates it."
+
+#: apps/remix/app/components/forms/document-preferences-form.tsx
+msgid "Match creator's language"
+msgstr "Match creator's language"
+
+#: apps/remix/app/components/forms/document-preferences-form.tsx
 msgid "Controls the default date format of new documents. By default, dates follow the document language; choosing a format applies it to all new documents."
 msgstr "Controls the default date format of new documents. By default, dates follow the document language; choosing a format applies it to all new documents."
 

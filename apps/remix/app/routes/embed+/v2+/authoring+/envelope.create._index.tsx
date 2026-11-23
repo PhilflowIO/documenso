@@ -166,7 +166,7 @@ type EnvelopeCreatePageProps = {
 const EnvelopeCreatePage = ({ embedAuthoringOptions }: EnvelopeCreatePageProps) => {
   const { token, tokenUserId, tokenTeamId, teamSettings, organisationEmails } = useSuperLoaderData<typeof loader>();
 
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const { toast } = useToast();
 
   const [isCreatingEnvelope, setIsCreatingEnvelope] = useState(false);
@@ -348,7 +348,9 @@ const EnvelopeCreatePage = ({ embedAuthoringOptions }: EnvelopeCreatePageProps) 
   }, [embedAuthoringOptions.features, embedded]);
 
   const initialEnvelope = useMemo((): TEditorEnvelope => {
-    const defaultDocumentMeta = extractDerivedDocumentMeta(teamSettings, undefined);
+    // The editor sends the language back explicitly on create, so its default has to be the one the server would
+    // pick: the interface language of the person authoring it.
+    const defaultDocumentMeta = extractDerivedDocumentMeta(teamSettings, undefined, { creatorLanguage: i18n.locale });
 
     const defaultRecipients = teamSettings.defaultRecipients
       ? ZDefaultRecipientsSchema.parse(teamSettings.defaultRecipients)

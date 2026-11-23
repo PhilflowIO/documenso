@@ -16,7 +16,7 @@ export const ZUpdateOrganisationSettingsRequestSchema = z.object({
   data: z.object({
     // Document related settings.
     documentVisibility: z.nativeEnum(DocumentVisibility).optional(),
-    documentLanguage: z.enum(SUPPORTED_LANGUAGE_CODES).optional(),
+    documentLanguage: z.enum(SUPPORTED_LANGUAGE_CODES).nullish(), // Null uses the interface language of the creator.
     documentTimezone: ZDocumentMetaTimezoneSchema.nullish(), // Null means local timezone.
     documentDateFormat: ZDocumentMetaDateFormatSchema.nullish(), // Null follows the document language.
     includeSenderDetails: z.boolean().optional(),

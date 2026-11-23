@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { SUPPORTED_LANGUAGE_CODES } from '../constants/locales';
+import { extractRequestLanguage } from '../utils/request-language';
 import { getIpAddress } from './get-ip-address';
 
 const ZIpSchema = z.string().ip();
@@ -7,6 +9,8 @@ const ZIpSchema = z.string().ip();
 export const ZRequestMetadataSchema = z.object({
   ipAddress: ZIpSchema.optional(),
   userAgent: z.string().optional(),
+  /** The interface language of the requester, which a document created without a language is written in. */
+  language: z.enum(SUPPORTED_LANGUAGE_CODES).optional(),
 });
 
 export type RequestMetadata = z.infer<typeof ZRequestMetadataSchema>;
@@ -58,5 +62,6 @@ export const extractRequestMetadata = (req: Request): RequestMetadata => {
   return {
     ipAddress,
     userAgent: userAgent ?? undefined,
+    language: extractRequestLanguage(req.headers) ?? undefined,
   };
 };

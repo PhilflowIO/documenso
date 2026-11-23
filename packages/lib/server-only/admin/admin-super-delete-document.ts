@@ -11,6 +11,7 @@ import { DOCUMENT_AUDIT_LOG_TYPE } from '../../types/document-audit-logs';
 import { extractDerivedDocumentEmailSettings } from '../../types/document-email';
 import type { RequestMetadata } from '../../universal/extract-request-metadata';
 import { createDocumentAuditLogData } from '../../utils/document-audit-logs';
+import { resolveDocumentLanguage } from '../../utils/document-language';
 import { isRecipientEmailValidForSending } from '../../utils/recipients';
 import { renderEmailWithI18N } from '../../utils/render-email-with-i18n';
 import { getEmailContext } from '../email/get-email-context';
@@ -75,7 +76,10 @@ export const adminSuperDeleteDocument = async ({ envelopeId, requestMetadata }: 
           assetBaseUrl,
         });
 
-        const lang = envelope.documentMeta?.language ?? settings.documentLanguage;
+        const lang = resolveDocumentLanguage({
+          documentLanguage: envelope.documentMeta?.language,
+          settingsLanguage: settings.documentLanguage,
+        });
 
         const [html, text] = await Promise.all([
           renderEmailWithI18N(template, { lang, branding }),

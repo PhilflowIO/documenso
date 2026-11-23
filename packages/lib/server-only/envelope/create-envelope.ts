@@ -388,7 +388,7 @@ export const createEnvelope = async ({
           ...meta,
           timezone: timezoneToUse,
         },
-        signatureLevel,
+        { signatureLevel, creatorLanguage: requestMetadata.requestMetadata.language },
       ),
     }),
     type === EnvelopeType.DOCUMENT

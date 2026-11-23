@@ -6,6 +6,7 @@ import { resolveSigningOrder } from '../server-only/signature-level/resolve-sign
 import type { TDocumentLite, TDocumentMany } from '../types/document';
 import { DEFAULT_DOCUMENT_EMAIL_SETTINGS } from '../types/document-email';
 import { SignatureLevel } from '../types/signature-level';
+import { resolveDocumentLanguage } from './document-language';
 import { mapSecondaryIdToDocumentId } from './envelope';
 import { mapRecipientToLegacyRecipient } from './recipients';
 
@@ -15,6 +16,11 @@ export const isDocumentCompleted = (document: Pick<Envelope, 'status'> | Documen
   return (
     status === DocumentStatus.COMPLETED || status === DocumentStatus.REJECTED || status === DocumentStatus.CANCELLED
   );
+};
+
+type ExtractDerivedDocumentMetaOptions = {
+  signatureLevel?: string;
+  creatorLanguage?: string | null;
 };
 
 /**
@@ -27,24 +33,30 @@ export const isDocumentCompleted = (document: Pick<Envelope, 'status'> | Documen
  *
  * @param settings - The merged organisation/team settings.
  * @param overrideMeta - The meta to override the settings with.
- * @param signatureLevel - The envelope's signature level. Optional; defaults
+ * @param options.signatureLevel - The envelope's signature level. Optional; defaults
  *   to `SES` for backward compatibility, which preserves the legacy `PARALLEL`
  *   signing-order default. New callers should pass the resolved level so the
  *   TSP envelopes get the `SEQUENTIAL` default + assertion against explicit
  *   `PARALLEL`.
+ * @param options.creatorLanguage - The interface language of whoever creates the
+ *   document, used when neither the meta nor the settings choose a language.
  * @returns The derived document meta.
  */
 export const extractDerivedDocumentMeta = (
   settings: Omit<OrganisationGlobalSettings, 'id'>,
   overrideMeta: Partial<DocumentMeta> | undefined | null,
-  signatureLevel: string = SignatureLevel.SES,
+  { signatureLevel = SignatureLevel.SES, creatorLanguage }: ExtractDerivedDocumentMetaOptions = {},
 ) => {
   const meta = overrideMeta ?? {};
 
   // Note: If you update this you will also need to update `create-document-from-template.ts`
   // since there is custom work there which allows 3 overrides.
   return {
-    language: meta.language || settings.documentLanguage,
+    language: resolveDocumentLanguage({
+      documentLanguage: meta.language,
+      settingsLanguage: settings.documentLanguage,
+      creatorLanguage,
+    }),
     timezone: meta.timezone || settings.documentTimezone || DEFAULT_DOCUMENT_TIME_ZONE,
     dateFormat: meta.dateFormat || settings.documentDateFormat || null, // Null follows `language`.
     message: meta.message || null,

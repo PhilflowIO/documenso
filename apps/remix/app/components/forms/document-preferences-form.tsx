@@ -83,7 +83,7 @@ const getDocumentPreferencesFormValues = (settings: SettingsSubset): TDocumentPr
 };
 
 export const DocumentPreferencesForm = ({ settings, onFormSubmit, canInherit }: DocumentPreferencesFormProps) => {
-  const { _ } = useLingui();
+  const { _, i18n } = useLingui();
   const { organisations } = useSession();
   const currentOrganisation = useCurrentOrganisation();
   const optionalTeam = useOptionalCurrentTeam();
@@ -226,24 +226,40 @@ export const DocumentPreferencesForm = ({ settings, onFormSubmit, canInherit }: 
                     </SelectTrigger>
 
                     <SelectContent>
+                      {/* Organisations store no language to use the creator's; teams store none to inherit. */}
+                      {!canInherit && (
+                        <SelectItem value={'-1'}>
+                          <Trans>Match creator's language</Trans>
+                        </SelectItem>
+                      )}
+
                       {Object.entries(SUPPORTED_LANGUAGES).map(([code, language]) => (
                         <SelectItem key={code} value={code}>
                           {_(language.full)}
                         </SelectItem>
                       ))}
 
-                      <SelectItem value={'-1'}>
-                        <Trans>Inherit from organisation</Trans>
-                      </SelectItem>
+                      {canInherit && (
+                        <SelectItem value={'-1'}>
+                          <Trans>Inherit from organisation</Trans>
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </FormControl>
 
                 <FormDescription>
-                  <Trans>
-                    Controls the default language of an uploaded document. This will be used as the language in email
-                    communications with the recipients.
-                  </Trans>
+                  {canInherit ? (
+                    <Trans>
+                      Controls the default language of an uploaded document. This will be used as the language in email
+                      communications with the recipients.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Controls the language of new documents, their emails to recipients and the signed PDF. If not set,
+                      each document uses the interface language of the person who creates it.
+                    </Trans>
+                  )}
                 </FormDescription>
               </InheritableField>
             )}
@@ -271,7 +287,10 @@ export const DocumentPreferencesForm = ({ settings, onFormSubmit, canInherit }: 
                     <SelectContent>
                       {/* Organisations store no format to follow the document language; teams store none to inherit. */}
                       {!canInherit && (
-                        <DocumentDateFormatLanguageOption value="-1" language={form.watch('documentLanguage')} />
+                        <DocumentDateFormatLanguageOption
+                          value="-1"
+                          language={form.watch('documentLanguage') ?? i18n.locale}
+                        />
                       )}
 
                       {DATE_FORMATS.map((format) => (
