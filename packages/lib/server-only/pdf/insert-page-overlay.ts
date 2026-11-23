@@ -47,7 +47,7 @@ export const insertPageOverlays = async ({ pdfDoc, fields, contents = [], images
     const { x, y } = getOverlayPosition({
       visibleBox: getVisibleBox(page),
       rotation: page.rotation,
-      overlayHeight: page.height,
+      overlayHeight: embeddedPage.box.height,
     });
 
     page.drawPage(embeddedPage, {
@@ -89,6 +89,10 @@ type GetOverlayPositionOptions = {
 /**
  * Where to draw the overlay so the corner Konva draws from, its top-left,
  * lands on the corner the viewer shows top-left after the page rotation.
+ *
+ * The overlay's own height is used rather than the page height because Skia
+ * writes the overlay page at whole points, so on fractional pages it differs
+ * from the page by up to half a point and the top-left corner moves with it.
  */
 const getOverlayPosition = ({ visibleBox, rotation, overlayHeight }: GetOverlayPositionOptions) => {
   const left = visibleBox.x;
