@@ -210,6 +210,7 @@ export const EnvelopePdfViewerToolbar = ({
           className={cn(
             'flex items-center gap-x-1.5 rounded-md px-2 py-1.5 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40',
             {
+              'bg-muted text-foreground': showSampleValues,
               'text-muted-foreground/60': !showSampleValues,
             },
           )}
@@ -234,6 +235,7 @@ export const EnvelopePdfViewerToolbar = ({
             className={cn(
               'flex items-center gap-x-1.5 rounded-md px-2 py-1.5 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground',
               {
+                'bg-muted text-foreground': snapToLines,
                 'text-muted-foreground/60': !snapToLines,
               },
             )}
