@@ -150,8 +150,11 @@ export const useEnvelopeCanvasFieldsLayer = ({
     const guideAttrs = snap.line
       ? {
           points: [snap.line.x, bottom + 1 / scale, snap.line.x + snap.line.width, bottom + 1 / scale],
-          stroke: getRecipientColorStyles(getRecipientColorKey(recipientId)).baseRing,
-          strokeWidth: 2,
+          // A halo rather than a thin stroke, which would vanish under the field's
+          // own border whenever the field covers the whole line.
+          stroke: getRecipientColorStyles(getRecipientColorKey(recipientId)).baseRingHover,
+          strokeWidth: 8,
+          lineCap: 'round' as const,
         }
       : {
           points: [
@@ -173,6 +176,7 @@ export const useEnvelopeCanvasFieldsLayer = ({
 
     layer.add(guide);
     guide.moveToTop();
+    layer.batchDraw();
   };
 
   const handleDragMove = (event: KonvaEventObject<DragEvent>, field: TLocalField) => {
