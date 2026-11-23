@@ -1,5 +1,4 @@
 import Konva from 'konva';
-import { match } from 'ts-pattern';
 
 import { getSignatureFontFamily } from '../../constants/pdf';
 import type { GenericTextFieldTypeMetas, TFieldMetaVerticalAlign } from '../../types/field-meta';
@@ -24,27 +23,6 @@ import { calculateFieldPosition, FIELD_SAMPLE_VALUE_OPACITY } from './field-rend
 import { applyTextBaselineAlignment, toKonvaVerticalAlign } from './field-vertical-align';
 
 const DEFAULT_TEXT_X_PADDING = 6;
-
-/**
- * A single line that overflows is laid out in a node reaching to the page edge,
- * which only serves its alignment. While editing, the node is narrowed to the
- * text itself, keeping the glyphs where they are: the field's selection box is
- * measured from its nodes and would otherwise stretch to the page edge.
- */
-const fitSingleLineTextToContent = (fieldText: Konva.Text, baseX: number, baseWidth: number) => {
-  if (fieldText.wrap() !== 'none') {
-    return;
-  }
-
-  const width = Math.max(baseWidth, fieldText.getTextWidth());
-
-  const x = match(fieldText.align())
-    .with('right', () => baseX + baseWidth - width)
-    .with('center', () => baseX + baseWidth / 2 - width / 2)
-    .otherwise(() => baseX);
-
-  fieldText.setAttrs({ x, width });
-};
 
 const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOptions) => {
   const { pageWidth, pageHeight, mode = 'edit', pageLayer, translations } = options;
@@ -181,10 +159,6 @@ const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOption
     height: overflowLayout.height,
     opacity: isSample ? FIELD_SAMPLE_VALUE_OPACITY : 1,
   } satisfies Partial<Konva.TextConfig>);
-
-  if (mode === 'edit') {
-    fitSingleLineTextToContent(fieldText, textX + DEFAULT_TEXT_X_PADDING, fieldWidth - DEFAULT_TEXT_X_PADDING * 2);
-  }
 
   applyTextBaselineAlignment(fieldText, textVerticalAlign);
 

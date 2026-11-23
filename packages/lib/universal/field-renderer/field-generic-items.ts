@@ -9,17 +9,45 @@ export const konvaTextFontFamily =
   '"Noto Sans", "Noto Sans Japanese", "Noto Sans Chinese", "Noto Sans Korean", sans-serif';
 export const konvaTextFill = 'black';
 
+/**
+ * A field's bounds are its rectangle, not everything drawn in its group: a value may run past the
+ * rectangle on purpose (overflow modes, sample values), and its text node is laid out up to the page
+ * edge purely to align it. Konva measures a group as the union of its children, which made the
+ * selection box, its resize handles, the marquee hit test and the action bar span to the page edge.
+ */
+const createFieldGroup = (renderId: string) => {
+  const fieldGroup = new Konva.Group({
+    id: renderId,
+    name: 'field-group',
+  });
+
+  const getChildrenClientRect = fieldGroup.getClientRect.bind(fieldGroup);
+
+  fieldGroup.getClientRect = (config = {}) => {
+    const fieldRect = fieldGroup.findOne<Konva.Rect>('.field-rect');
+
+    if (!fieldRect) {
+      return getChildrenClientRect(config);
+    }
+
+    const rect = fieldRect.getClientRect({
+      relativeTo: fieldGroup,
+      skipShadow: config.skipShadow,
+      skipStroke: config.skipStroke,
+    });
+
+    return config.skipTransform ? rect : fieldGroup._transformedRect(rect, config.relativeTo);
+  };
+
+  return fieldGroup;
+};
+
 export const upsertFieldGroup = (field: FieldToRender, options: RenderFieldElementOptions): Konva.Group => {
   const { pageWidth, pageHeight, pageLayer, editable, scale } = options;
 
   const { fieldX, fieldY, fieldWidth, fieldHeight } = calculateFieldPosition(field, pageWidth, pageHeight);
 
-  const fieldGroup: Konva.Group =
-    pageLayer.findOne(`#${field.renderId}`) ||
-    new Konva.Group({
-      id: field.renderId,
-      name: 'field-group',
-    });
+  const fieldGroup: Konva.Group = pageLayer.findOne(`#${field.renderId}`) || createFieldGroup(field.renderId);
 
   const maxXPosition = (pageWidth - fieldWidth) * scale;
   const maxYPosition = (pageHeight - fieldHeight) * scale;
