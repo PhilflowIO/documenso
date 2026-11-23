@@ -2,9 +2,9 @@
 import '../konva/skia-backend';
 
 import type { FieldWithSignature } from '@documenso/prisma/types/field-with-signature';
-import type { Canvas } from '@documenso/skia-canvas';
 import type { EnvelopeContent } from '@prisma/client';
 import Konva from 'konva';
+import type { Canvas } from 'skia-canvas';
 
 import type { ContentImageMap } from '../../universal/content-renderer/content-renderer';
 import { renderContent } from '../../universal/content-renderer/render-content';
