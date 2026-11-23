@@ -20,7 +20,22 @@ export type FieldToRender = Pick<
   isValidating?: boolean;
   fieldMeta?: TFieldMetaSchema | null;
   signature?: Pick<Signature, 'signatureImageAsBase64' | 'typedSignature'> | null;
+
+  /**
+   * Shown faded in place of the field name while editing, laid out exactly like
+   * a filled value, so the sender sees how large and where it will land.
+   * Ignored once the field is inserted and outside of the `edit` mode.
+   */
+  sampleValue?: FieldSampleValue | null;
 };
+
+export type FieldSampleValue = { type: 'text'; text: string } | { type: 'image'; imageAsBase64: string };
+
+/**
+ * Sample values are only a hint, so they are drawn faded to never be mistaken
+ * for a value that was actually filled in.
+ */
+export const FIELD_SAMPLE_VALUE_OPACITY = 0.4;
 
 /**
  * The render type.

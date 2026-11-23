@@ -5,14 +5,14 @@ import {
 } from '@documenso/lib/client-only/providers/envelope-render-provider';
 import { cn } from '@documenso/ui/lib/utils';
 import { Trans, useLingui } from '@lingui/react/macro';
-import { EyeIcon, EyeOffIcon, ZoomInIcon, ZoomOutIcon } from 'lucide-react';
+import { EyeIcon, EyeOffIcon, TextCursorInputIcon, ZoomInIcon, ZoomOutIcon } from 'lucide-react';
 import { useLayoutEffect, useState } from 'react';
 
 import type { ScrollTarget } from '../virtual-list/use-virtual-list';
 
 const TOOLBAR_BOTTOM_OFFSET = 24;
 
-export type EnvelopePdfViewerToolbarControl = 'zoom' | 'fields' | 'contents';
+export type EnvelopePdfViewerToolbarControl = 'zoom' | 'fields' | 'contents' | 'samples';
 
 export type EnvelopePdfViewerToolbarProps = {
   controls?: EnvelopePdfViewerToolbarControl[];
@@ -40,6 +40,8 @@ export const EnvelopePdfViewerToolbar = ({
     setFieldsVisibility,
     contentsVisibility,
     setContentsVisibility,
+    showSampleValues,
+    setShowSampleValues,
   } = viewerControls;
 
   const [position, setPosition] = useState<{ left: number; bottom: number } | null>(null);
@@ -105,6 +107,7 @@ export const EnvelopePdfViewerToolbar = ({
   const showZoom = controls.includes('zoom');
   const showFieldsToggle = controls.includes('fields');
   const showContentsToggle = controls.includes('contents');
+  const showSamplesToggle = controls.includes('samples');
 
   const isFieldsHidden = fieldsVisibility === 'hidden';
   const isContentsHidden = contentsVisibility === 'hidden';
@@ -190,6 +193,28 @@ export const EnvelopePdfViewerToolbar = ({
         >
           {isContentsHidden ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
           <Trans>Contents</Trans>
+        </button>
+      )}
+
+      {showSamplesToggle && (
+        <button
+          type="button"
+          title={showSampleValues ? t`Hide sample values` : t`Show sample values`}
+          aria-label={showSampleValues ? t`Hide sample values` : t`Show sample values`}
+          aria-pressed={showSampleValues}
+          disabled={isFieldsHidden}
+          onClick={() => setShowSampleValues(!showSampleValues)}
+          className={cn(
+            'flex items-center gap-x-1.5 rounded-md px-2 py-1.5 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40',
+            {
+              'text-muted-foreground/60': !showSampleValues,
+            },
+          )}
+        >
+          <TextCursorInputIcon className="h-4 w-4" />
+          <span className="hidden sm:inline">
+            <Trans>Samples</Trans>
+          </span>
         </button>
       )}
     </div>

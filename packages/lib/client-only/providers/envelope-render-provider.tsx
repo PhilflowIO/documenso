@@ -33,6 +33,12 @@ export type EnvelopeViewerControls = {
 
   contentsVisibility: EnvelopePageItemsVisibility;
   setContentsVisibility: (visibility: EnvelopePageItemsVisibility) => void;
+
+  /**
+   * Whether empty fields show a sample value while editing. Remembered per browser.
+   */
+  showSampleValues: boolean;
+  setShowSampleValues: (showSampleValues: boolean) => void;
 };
 
 /**
@@ -195,6 +201,32 @@ interface EnvelopeRenderProviderProps {
 
 const EnvelopeRenderContext = createContext<EnvelopeRenderProviderValue | null>(null);
 
+/**
+ * A boolean kept in local storage. Starts with the initial value on the server
+ * and the first client render, then picks up the stored value.
+ */
+const usePersistedFlag = (key: string, initialValue: boolean) => {
+  const [value, setValue] = useState(initialValue);
+
+  useEffect(() => {
+    const storedValue = window.localStorage.getItem(key);
+
+    if (storedValue !== null) {
+      setValue(storedValue === 'true');
+    }
+  }, [key]);
+
+  const setPersistedValue = useCallback(
+    (nextValue: boolean) => {
+      setValue(nextValue);
+      window.localStorage.setItem(key, String(nextValue));
+    },
+    [key],
+  );
+
+  return [value, setPersistedValue] as const;
+};
+
 export const useCurrentEnvelopeRender = () => {
   const context = useContext(EnvelopeRenderContext);
 
@@ -226,6 +258,7 @@ export const EnvelopeRenderProvider = ({
   const [zoom, setZoomInternal] = useState<number>(1);
   const [fieldsVisibility, setFieldsVisibility] = useState<EnvelopePageItemsVisibility>('visible');
   const [contentsVisibility, setContentsVisibility] = useState<EnvelopePageItemsVisibility>('visible');
+  const [showSampleValues, setShowSampleValues] = usePersistedFlag('documenso.editor.show-sample-values', true);
 
   const setZoom = useCallback((value: number) => {
     setZoomInternal(clamp(value, { min: ENVELOPE_VIEWER_MIN_ZOOM, max: ENVELOPE_VIEWER_MAX_ZOOM }));
@@ -249,8 +282,10 @@ export const EnvelopeRenderProvider = ({
       setFieldsVisibility,
       contentsVisibility,
       setContentsVisibility,
+      showSampleValues,
+      setShowSampleValues,
     }),
-    [zoom, setZoom, zoomIn, zoomOut, fieldsVisibility, contentsVisibility],
+    [zoom, setZoom, zoomIn, zoomOut, fieldsVisibility, contentsVisibility, showSampleValues],
   );
 
   const envelopeItems = useMemo(

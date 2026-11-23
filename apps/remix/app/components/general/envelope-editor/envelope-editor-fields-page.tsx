@@ -69,6 +69,7 @@ import { useCurrentTeam } from '~/providers/team';
 import { ContentImageUploadDialog } from './content-image-upload-dialog';
 import { ContentSettingsFormProvider } from './content-settings-form-provider';
 import { EnvelopeEditorContentDragDrop } from './envelope-editor-content-drag-drop';
+import { EnvelopeEditorFieldOverflowWarning } from './envelope-editor-field-overflow-warning';
 import { EnvelopeEditorFieldDragDrop } from './envelope-editor-fields-drag-drop';
 import { EnvelopeEditorFieldsPageRenderer } from './envelope-editor-fields-page-renderer';
 import { EnvelopeEditorInvalidDirectTemplateAlert } from './envelope-editor-invalid-direct-template-alert';
@@ -358,7 +359,11 @@ export const EnvelopeEditorFieldsPage = () => {
                   customPageRenderer={EnvelopeEditorFieldsPageRenderer}
                   scrollParentRef={scrollableContainerRef}
                   errorMessage={PDF_VIEWER_ERROR_MESSAGES.editor}
-                  toolbar={allowContents ? ['zoom', 'fields', 'contents'] : ['zoom', 'fields']}
+                  toolbar={
+                    allowContents
+                      ? ['zoom', 'fields', 'contents', 'samples']
+                      : ['zoom', 'fields', 'samples']
+                  }
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-32">
@@ -603,6 +608,8 @@ export const EnvelopeEditorFieldsPage = () => {
                               />
                             ))
                             .otherwise(() => null)}
+
+                          <EnvelopeEditorFieldOverflowWarning field={selectedField} />
                         </div>
                       </section>
                     )}

@@ -7,7 +7,7 @@ import { FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN, resolveFieldOverflowMode } from '
 import { calculateOverflowLayout } from './calculate-overflow-layout';
 import { createFieldHoverInteraction, upsertFieldGroup, upsertFieldRect } from './field-generic-items';
 import type { FieldToRender, RenderFieldElementOptions } from './field-renderer';
-import { calculateFieldPosition } from './field-renderer';
+import { calculateFieldPosition, FIELD_SAMPLE_VALUE_OPACITY } from './field-renderer';
 import { applyTextBaselineAlignment, toKonvaVerticalAlign } from './field-vertical-align';
 import type { SignatureInkBounds } from './signature-image-layout';
 import { getSignatureInkBounds, layoutSignatureImage } from './signature-image-layout';
@@ -210,6 +210,7 @@ const createFieldSignature = (field: FieldToRender, options: RenderFieldElementO
   const textY = 0;
 
   let textToRender: string = fieldTypeName;
+  let isSample = false;
 
   const signature = field.signature;
 
@@ -229,6 +230,19 @@ const createFieldSignature = (field: FieldToRender, options: RenderFieldElementO
         isImageSignature: true,
         isLabel: false,
       };
+    }
+
+    if (!field.inserted && field.sampleValue?.type === 'image') {
+      const node = createSignatureImage(field.sampleValue.imageAsBase64, fieldWidth, fieldHeight, alignment);
+
+      node.opacity(FIELD_SAMPLE_VALUE_OPACITY);
+
+      return { node, isImageSignature: true, isLabel: false };
+    }
+
+    if (!field.inserted && field.sampleValue?.type === 'text') {
+      isSample = true;
+      textToRender = field.sampleValue.text;
     }
   }
 
@@ -255,7 +269,7 @@ const createFieldSignature = (field: FieldToRender, options: RenderFieldElementO
 
   // Whether we're rendering the field type name (like "Signature") vs actual signed content.
   // Overflow should not apply to the label.
-  const isLabel = !signature?.typedSignature;
+  const isLabel = !signature?.typedSignature && !isSample;
 
   const overflowLayout = calculateOverflowLayout({
     overflowMode: resolveFieldOverflowMode(fieldMeta),
@@ -288,6 +302,7 @@ const createFieldSignature = (field: FieldToRender, options: RenderFieldElementO
     align: overflowLayout.textAlign,
     width: overflowLayout.width,
     height: overflowLayout.height,
+    opacity: isSample ? FIELD_SAMPLE_VALUE_OPACITY : 1,
   } satisfies Partial<Konva.TextConfig>);
 
   applyTextBaselineAlignment(fieldText, textVerticalAlign);

@@ -16,6 +16,7 @@ import Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { useEffect, useMemo } from 'react';
 
+import { getFieldSampleValue } from './envelope-canvas-field-samples';
 import type { EnvelopeCanvas, EnvelopeCanvasBox } from './envelope-canvas-types';
 import { ENVELOPE_CANVAS_GROUP_NAMES } from './envelope-canvas-types';
 import {
@@ -45,7 +46,7 @@ export const useEnvelopeCanvasFieldsLayer = ({
   const { i18n } = useLingui();
   const analytics = useAnalytics();
   const { envelope, editorFields, getRecipientColorKey } = useCurrentEnvelopeEditor();
-  const { currentEnvelopeItem, setRenderError } = useCurrentEnvelopeRender();
+  const { currentEnvelopeItem, setRenderError, viewerControls } = useCurrentEnvelopeRender();
 
   const { stage, pageLayer, scale, pageNumber, unscaledViewport, scaledViewport } = canvas;
   const { fieldGroups: selectedGroups, isTransforming } = selection;
@@ -95,13 +96,17 @@ export const useEnvelopeCanvasFieldsLayer = ({
     const fieldGroup = event.target as Konva.Group;
     const fieldFormId = fieldGroup.id();
 
+    // Measured on the field's own rect: the group also holds its text, which can
+    // overflow the field (and does on purpose for sample values).
+    const fieldRect = fieldGroup.findOne('.field-rect') ?? fieldGroup;
+
     // Note: This values are scaled.
     const {
       width: fieldPixelWidth,
       height: fieldPixelHeight,
       x: fieldX,
       y: fieldY,
-    } = fieldGroup.getClientRect({
+    } = fieldRect.getClientRect({
       skipStroke: true,
       skipShadow: true,
     });
@@ -208,6 +213,9 @@ export const useEnvelopeCanvasFieldsLayer = ({
         customText: '',
         inserted: false,
         fieldMeta: field.fieldMeta,
+        sampleValue: viewerControls.showSampleValues
+          ? getFieldSampleValue({ field, recipient, documentMeta: envelope.documentMeta, i18n })
+          : null,
       },
       translations: getClientSideFieldTranslations(i18n),
       pageWidth: unscaledViewport.width,
@@ -359,6 +367,9 @@ export const useEnvelopeCanvasFieldsLayer = ({
     isTransforming,
     editorFields.selectedField?.formId,
     fieldsVisibility,
+    viewerControls.showSampleValues,
+    envelope.documentMeta,
+    envelope.recipients,
   ]);
 
   // Otherwise the transformer and floating toolbars would remain anchored to hidden fields.

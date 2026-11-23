@@ -29,6 +29,46 @@ msgstr "The bottom edge of the field is the line. Text sits on it."
 msgid "The bottom edge of the field is the line. The height limits how large the signature gets."
 msgstr "The bottom edge of the field is the line. The height limits how large the signature gets."
 
+#: apps/remix/app/components/general/envelope-editor/canvas/envelope-canvas-field-samples.ts
+msgid "Jane Doe"
+msgstr "Jane Doe"
+
+#: apps/remix/app/components/general/envelope-editor/canvas/envelope-canvas-field-samples.ts
+msgid "Sample text"
+msgstr "Sample text"
+
+#: apps/remix/app/components/general/pdf-viewer/pdf-viewer-toolbar.tsx
+msgid "Show sample values"
+msgstr "Show sample values"
+
+#: apps/remix/app/components/general/pdf-viewer/pdf-viewer-toolbar.tsx
+msgid "Hide sample values"
+msgstr "Hide sample values"
+
+#: apps/remix/app/components/general/pdf-viewer/pdf-viewer-toolbar.tsx
+msgid "Samples"
+msgstr "Samples"
+
+#: apps/remix/app/components/general/envelope-editor/envelope-editor-field-overflow-warning.tsx
+msgid "The date is wider than the field. Widen the field or use a shorter format."
+msgstr "The date is wider than the field. Widen the field or use a shorter format."
+
+#: apps/remix/app/components/general/envelope-editor/envelope-editor-field-overflow-warning.tsx
+msgid "At {characterLimit} characters the text is wider than the field."
+msgstr "At {characterLimit} characters the text is wider than the field."
+
+#: apps/remix/app/components/general/envelope-editor/envelope-editor-field-overflow-warning.tsx
+msgid "This value is wider than the field. Widen the field or reduce the font size."
+msgstr "This value is wider than the field. Widen the field or reduce the font size."
+
+#: apps/remix/app/components/general/envelope-editor/envelope-editor-field-overflow-warning.tsx
+msgid "Change date format"
+msgstr "Change date format"
+
+#: apps/remix/app/components/general/envelope-editor/envelope-editor-field-overflow-warning.tsx
+msgid "Applies to all date fields in this document."
+msgstr "Applies to all date fields in this document."
+
 #. placeholder {0}: invalidEmails[0].value
 #: apps/remix/app/components/general/default-recipients-multiselect-combobox.tsx
 msgid "\"{0}\" is not a valid email address."

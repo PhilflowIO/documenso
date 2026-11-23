@@ -19,7 +19,7 @@ import {
   upsertFieldRect,
 } from './field-generic-items';
 import type { FieldToRender, RenderFieldElementOptions } from './field-renderer';
-import { calculateFieldPosition } from './field-renderer';
+import { calculateFieldPosition, FIELD_SAMPLE_VALUE_OPACITY } from './field-renderer';
 import { applyTextBaselineAlignment, toKonvaVerticalAlign } from './field-vertical-align';
 
 const DEFAULT_TEXT_X_PADDING = 6;
@@ -67,6 +67,19 @@ const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOption
 
       textVerticalAlign = fieldMeta.verticalAlign || FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN;
       textAlign = fieldMeta.textAlign || FIELD_DEFAULT_GENERIC_ALIGN;
+      textLetterSpacing = fieldMeta.letterSpacing || FIELD_DEFAULT_LETTER_SPACING;
+      textLineHeight = fieldMeta.lineHeight || FIELD_DEFAULT_LINE_HEIGHT;
+    }
+  }
+
+  const isSample = mode === 'edit' && !field.inserted && isLabel && field.sampleValue?.type === 'text';
+
+  if (isSample && field.sampleValue?.type === 'text') {
+    isLabel = false;
+    textToRender = field.sampleValue.text;
+    textAlign = fieldMeta?.textAlign || FIELD_DEFAULT_GENERIC_ALIGN;
+
+    if (fieldMeta?.type === 'text' || fieldMeta?.type === 'number') {
       textLetterSpacing = fieldMeta.letterSpacing || FIELD_DEFAULT_LETTER_SPACING;
       textLineHeight = fieldMeta.lineHeight || FIELD_DEFAULT_LINE_HEIGHT;
     }
@@ -144,6 +157,7 @@ const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOption
     fill: konvaTextFill,
     width: overflowLayout.width,
     height: overflowLayout.height,
+    opacity: isSample ? FIELD_SAMPLE_VALUE_OPACITY : 1,
   } satisfies Partial<Konva.TextConfig>);
 
   applyTextBaselineAlignment(fieldText, textVerticalAlign);
@@ -270,4 +284,44 @@ export const renderGenericTextFieldElement = (field: FieldToRender, options: Ren
     fieldGroup,
     isFirstRender,
   };
+};
+
+type IsFieldTextWiderThanFieldOptions = {
+  field: Pick<FieldToRender, 'width' | 'height' | 'positionX' | 'positionY' | 'fieldMeta'>;
+  text: string;
+  pageWidth: number;
+  pageHeight: number;
+};
+
+/**
+ * Whether a value runs past the edges of a single line field, measured with
+ * the same font, size and padding the renderer uses. A field tall enough for
+ * a second line wraps instead, so it never counts as too narrow.
+ */
+export const isFieldTextWiderThanField = ({ field, text, pageWidth, pageHeight }: IsFieldTextWiderThanFieldOptions) => {
+  const fieldMeta = field.fieldMeta as GenericTextFieldTypeMetas | undefined;
+  const isHandwriting = fieldMeta?.type === 'initials' && fieldMeta.fontFamily === 'handwriting';
+
+  const { fieldWidth, fieldHeight } = calculateFieldPosition(field, pageWidth, pageHeight);
+
+  const textNode = new Konva.Text({
+    text,
+    fontSize: resolveFieldFontSize(fieldMeta),
+    fontFamily: isHandwriting ? getSignatureFontFamily(text) : konvaTextFontFamily,
+    lineHeight:
+      fieldMeta?.type === 'text' || fieldMeta?.type === 'number'
+        ? fieldMeta.lineHeight || FIELD_DEFAULT_LINE_HEIGHT
+        : FIELD_DEFAULT_LINE_HEIGHT,
+    letterSpacing:
+      fieldMeta?.type === 'text' || fieldMeta?.type === 'number'
+        ? fieldMeta.letterSpacing || FIELD_DEFAULT_LETTER_SPACING
+        : FIELD_DEFAULT_LETTER_SPACING,
+  });
+
+  const isTooWide = textNode.width() > fieldWidth - DEFAULT_TEXT_X_PADDING * 2;
+  const hasRoomForSecondLine = fieldHeight >= textNode.height() * 2;
+
+  textNode.destroy();
+
+  return isTooWide && !hasRoomForSecondLine;
 };
