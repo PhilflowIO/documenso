@@ -39,6 +39,30 @@ import { useEnvelopeCanvasPageLines } from './canvas/use-envelope-canvas-page-li
 import { useEnvelopeCanvasSelection } from './canvas/use-envelope-canvas-selection';
 import { contentButtonList } from './envelope-editor-content-drag-drop';
 
+/**
+ * Arrow keys nudge the selected fields by this many page points, or by the
+ * large step with Shift, independent of the zoom level.
+ */
+const NUDGE_STEP_PT = 1;
+const NUDGE_LARGE_STEP_PT = 10;
+
+const NUDGE_DIRECTIONS: Record<string, { x: number; y: number }> = {
+  ArrowUp: { x: 0, y: -1 },
+  ArrowDown: { x: 0, y: 1 },
+  ArrowLeft: { x: -1, y: 0 },
+  ArrowRight: { x: 1, y: 0 },
+};
+
+/**
+ * Keys typed into a form control, or into an open popup, belong to it.
+ */
+const isTypingTarget = (target: EventTarget | null) => {
+  return (
+    target instanceof HTMLElement &&
+    Boolean(target.closest('input, textarea, select, [contenteditable="true"], [role="listbox"], [role="dialog"]'))
+  );
+};
+
 const getNodeSelectionKind = (node: Konva.Node): EnvelopeCanvasSelectionKind | null => {
   if (node.hasName(ENVELOPE_CANVAS_GROUP_NAMES.field)) {
     return 'field';
@@ -138,6 +162,43 @@ export const EnvelopeEditorFieldsPageRenderer = ({ pageData }: { pageData: PageR
     onSelect: (box) => (isContentsEditable ? contents.selectInBox(box) : fields.selectInBox(box)),
     onEmptyClick: selection.clear,
   });
+
+  useEffect(() => {
+    if (selection.fieldGroups.length === 0 || fieldsVisibility !== 'visible') {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const direction = NUDGE_DIRECTIONS[event.key];
+
+      if (!direction || event.altKey || event.ctrlKey || event.metaKey || isTypingTarget(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const step = event.shiftKey ? NUDGE_LARGE_STEP_PT : NUDGE_STEP_PT;
+
+      for (const group of selection.fieldGroups) {
+        const field = editorFields.getFieldByFormId(group.id());
+
+        if (!field) {
+          continue;
+        }
+
+        editorFields.updateFieldByFormId(field.formId, {
+          positionX: field.positionX + ((direction.x * step) / unscaledViewport.width) * 100,
+          positionY: field.positionY + ((direction.y * step) / unscaledViewport.height) * 100,
+        });
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [selection.fieldGroups, fieldsVisibility, unscaledViewport, editorFields]);
 
   // The action bar and pending menus are DOM elements above the canvas, so a
   // placement click landing on one would press its button as well as placing the
