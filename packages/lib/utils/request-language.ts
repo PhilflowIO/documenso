@@ -1,4 +1,4 @@
-import { isValidLanguageCode, type SupportedLanguageCodes } from '../constants/i18n';
+import { isValidLanguageCode, type SupportedLanguageCodes } from '../constants/locales';
 
 /**
  * The cookie holding the interface language. The app writes it with React Router's `createCookie`, which stores

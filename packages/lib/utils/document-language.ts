@@ -1,4 +1,4 @@
-import { APP_I18N_OPTIONS, isValidLanguageCode, type SupportedLanguageCodes } from '../constants/i18n';
+import { APP_I18N_OPTIONS, isValidLanguageCode, type SupportedLanguageCodes } from '../constants/locales';
 
 type ResolveDocumentLanguageOptions = {
   /** Chosen for this document, e.g. through the API or carried over from its template. */
