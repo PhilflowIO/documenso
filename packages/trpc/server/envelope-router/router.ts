@@ -24,6 +24,9 @@ import { updateEnvelopeFieldsRoute } from './envelope-fields/update-envelope-fie
 import { createEnvelopeRecipientsRoute } from './envelope-recipients/create-envelope-recipients';
 import { deleteEnvelopeRecipientRoute } from './envelope-recipients/delete-envelope-recipient';
 import { getEnvelopeRecipientRoute } from './envelope-recipients/get-envelope-recipient';
+import { headlessDeclineEnvelopeRecipientRoute } from './envelope-recipients/headless-decline-envelope-recipient';
+import { headlessSignEnvelopeRecipientRoute } from './envelope-recipients/headless-sign-envelope-recipient';
+import { headlessViewEnvelopeRecipientRoute } from './envelope-recipients/headless-view-envelope-recipient';
 import { rejectEnvelopeRecipientOnBehalfOfRoute } from './envelope-recipients/reject-envelope-recipient-on-behalf-of';
 import { reportRecipientRoute } from './envelope-recipients/report-recipient';
 import { updateEnvelopeRecipientsRoute } from './envelope-recipients/update-envelope-recipients';
@@ -76,6 +79,11 @@ export const envelopeRouter = router({
     set: setEnvelopeRecipientsRoute,
     report: reportRecipientRoute,
     rejectOnBehalfOf: rejectEnvelopeRecipientOnBehalfOfRoute,
+    headless: {
+      view: headlessViewEnvelopeRecipientRoute,
+      sign: headlessSignEnvelopeRecipientRoute,
+      decline: headlessDeclineEnvelopeRecipientRoute,
+    },
   },
   field: {
     get: getEnvelopeFieldRoute,

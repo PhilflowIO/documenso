@@ -10,4 +10,10 @@ export const APP_I18N_OPTIONS = {
   defaultLocale: 'en-US',
 } as const;
 
+// Lives here rather than in `./i18n` because that module needs the lingui macro
+// transform, which server code loaded through tsx (seeds, Playwright specs)
+// does not get. `./i18n` re-exports this module, so its callers are unchanged.
+export const isValidLanguageCode = (code: unknown): code is SupportedLanguageCodes =>
+  SUPPORTED_LANGUAGE_CODES.includes(code as SupportedLanguageCodes);
+
 export const ZSupportedLanguageCodeSchema = z.enum(SUPPORTED_LANGUAGE_CODES).catch('en');
